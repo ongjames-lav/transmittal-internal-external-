@@ -1,0 +1,879 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}Compose Email{% endblock %}
+
+{% block content %}
+<style>
+    /* Gmail-Inspired Color Palette */
+    :root {
+        --gmail-blue: #1a73e8;
+        --gmail-blue-hover: #1765cc;
+        --gmail-red: #ea4335;
+        --gmail-gray: #5f6368;
+        --gmail-light-gray: #f1f3f4;
+        --gmail-border: #dadce0;
+        --gmail-text: #202124;
+    }
+
+    body {
+        font-family: 'Google Sans', 'Segoe UI', Arial, sans-serif;
+        background: #f8f9fa;
+        color: var(--gmail-text);
+    }
+
+    /* Gmail-style Header */
+    .gmail-header {
+        background: white;
+        border-bottom: 1px solid var(--gmail-border);
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .gmail-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 22px;
+        font-weight: 400;
+        color: var(--gmail-gray);
+    }
+
+    .gmail-logo img {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Main Container */
+    .gmail-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* Gmail-style Card */
+    .gmail-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+        overflow: hidden;
+    }
+
+    .gmail-card-header {
+        background: var(--gmail-light-gray);
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--gmail-border);
+    }
+
+    .gmail-card-header h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--gmail-text);
+    }
+
+    .gmail-card-body {
+        padding: 24px;
+    }
+
+    /* Sender Info Section */
+    .sender-info {
+        background: var(--gmail-light-gray);
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        border-left: 4px solid var(--gmail-blue);
+    }
+
+    .sender-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+    }
+
+    .sender-info-item {
+        display: flex;
+        gap: 8px;
+    }
+
+    .sender-info-label {
+        font-weight: 500;
+        color: var(--gmail-gray);
+        min-width: 80px;
+    }
+
+    .sender-info-value {
+        color: var(--gmail-text);
+    }
+
+    /* Form Styling (Gmail-inspired) */
+    .gmail-form-group {
+        margin-bottom: 20px;
+    }
+
+    .gmail-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gmail-text);
+    }
+
+    .gmail-input,
+    .gmail-select,
+    .gmail-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--gmail-border);
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: white;
+    }
+
+    .gmail-input:focus,
+    .gmail-select:focus,
+    .gmail-textarea:focus {
+        outline: none;
+        border-color: var(--gmail-blue);
+        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1);
+    }
+
+    .gmail-input:read-only {
+        background-color: #f0f0f0 !important;
+        cursor: not-allowed !important;
+        color: #5f6368 !important;
+        opacity: 0.85;
+        border-color: #e0e0e0 !important;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .gmail-input:read-only:hover {
+        background-color: #f0f0f0 !important;
+    }
+
+    .gmail-input:read-only:focus {
+        border-color: #e0e0e0 !important;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        outline: none;
+    }
+
+    .gmail-select:disabled {
+        background-color: #f0f0f0 !important;
+        cursor: not-allowed !important;
+        color: #5f6368 !important;
+        opacity: 0.85;
+        border-color: #e0e0e0 !important;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .gmail-select:disabled:hover {
+        background-color: #f0f0f0 !important;
+    }
+
+    .gmail-select:disabled:focus {
+        border-color: #e0e0e0 !important;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        outline: none;
+    }
+
+    /* Aggressively hide the actual select field */
+    #destination-location,
+    select[name="destination_location"],
+    .gmail-select[name="destination_location"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        width: 0 !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        pointer-events: none !important;
+    }
+
+    .gmail-textarea {
+        min-height: 150px;
+        resize: vertical;
+    }
+
+    /* Mode Selector (Gmail-style) */
+    .mode-selector {
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--gmail-border);
+        margin-bottom: 20px;
+    }
+
+    .mode-selector label {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 24px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--gmail-text);
+        padding: 6px 12px;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+    .mode-selector label:hover {
+        background: var(--gmail-light-gray);
+    }
+
+    .mode-selector input[type="radio"] {
+        margin-right: 8px;
+        accent-color: var(--gmail-blue);
+    }
+
+    /* Gmail Buttons */
+    .gmail-btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .gmail-btn-primary {
+        background: var(--gmail-blue);
+        color: white;
+    }
+
+    .gmail-btn-primary:hover {
+        background: var(--gmail-blue-hover);
+        box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    }
+
+    .gmail-btn-secondary {
+        background: white;
+        color: var(--gmail-gray);
+        border: 1px solid var(--gmail-border);
+    }
+
+    .gmail-btn-secondary:hover {
+        background: var(--gmail-light-gray);
+    }
+
+    .button-group {
+        display: flex;
+        gap: 12px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gmail-border);
+        margin-top: 24px;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .gmail-container {
+            margin: 20px auto;
+        }
+
+        .gmail-card-body {
+            padding: 16px;
+        }
+
+        .sender-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .button-group {
+            flex-direction: column;
+        }
+
+        .gmail-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+
+
+<div class="gmail-container">
+    <div class="gmail-card">
+        <div class="gmail-card-header">
+            <h2><span class="material-icons"
+                    style="font-size: 20px; vertical-align: middle; margin-right: 8px;">edit</span> New Message</h2>
+        </div>
+
+        <div class="gmail-card-body">
+            <!-- Sender Information -->
+            <div class="sender-info">
+                <div style="font-weight: 500; margin-bottom: 12px; color: var(--gmail-text);">From</div>
+                <div class="sender-info-grid">
+                    <div class="sender-info-item">
+                        <span class="sender-info-label">Name:</span>
+                        <span class="sender-info-value">{{ user.profile.get_full_name }}</span>
+                    </div>
+                    <div class="sender-info-item">
+                        <span class="sender-info-label">Department:</span>
+                        <span class="sender-info-value">{{ user.profile.department.name|default:"N/A" }}</span>
+                    </div>
+                    <div class="sender-info-item">
+                        <span class="sender-info-label">Date:</span>
+                        <span class="sender-info-value">{{ today }}</span>
+                    </div>
+                    <div class="sender-info-item">
+                        <span class="sender-info-label">Time:</span>
+                        <span class="sender-info-value">{{ now }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if form.errors %}
+            <div
+                style="background-color: #fce8e6; color: #c5221f; padding: 12px; border-radius: 4px; margin-bottom: 16px; border: 1px solid #fad2cf; font-size: 13px;">
+                <strong>Form Errors:</strong>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                    <li>{{ field }}: {{ error }}</li>
+                    {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <form method="post" id="transmittalForm" enctype="multipart/form-data" onsubmit="disableSubmitButton()">
+                {% csrf_token %}
+
+                <!-- Hidden field to track reverse_from transmittal for attachment copying -->
+                <input type="hidden" id="reverse_from_id" name="reverse_from_id"
+                    value="{{ request.GET.reverse_from|default:'' }}">
+
+                <!-- User Selection Autocomplete -->
+                <div class="gmail-form-group" id="userSelectSection">
+                    <label class="gmail-label" for="user-autocomplete-input">
+                        Select Recipient
+                    </label>
+                    <input type="text" id="user-autocomplete-input" class="gmail-input"
+                        placeholder="Type recipient username..." autocomplete="off"
+                        value="{{ selected_user_name|default:'' }}">
+                    <div id="user-autocomplete-list"
+                        style="position:absolute; z-index:1000; background:white; border:1px solid var(--gmail-border); display:none; max-height:180px; overflow-y:auto; width:60%; margin-top:0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    </div>
+                    <input type="hidden" id="user-autocomplete-id" name="selected_user"
+                        value="{{ form.selected_user.value|default:'' }}">
+                    {% if form.selected_user.errors %}
+                    <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                        {{ form.selected_user.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Manual Input Fields -->
+                <div id="manualFieldsSection">
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="{{ form.recipient_name.id_for_label }}">
+                            To (Recipient Name)
+                        </label>
+                        <input type="text" id="{{ form.recipient_name.id_for_label }}" name="recipient_name"
+                            class="gmail-input" readonly value="{{ form.recipient_name.value|default:'' }}">
+                        {% if form.recipient_name.errors %}
+                        <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                            {{ form.recipient_name.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="{{ form.recipient_email.id_for_label }}">
+                            Email
+                        </label>
+                        <input type="email" id="{{ form.recipient_email.id_for_label }}" name="recipient_email"
+                            class="gmail-input" readonly value="{{ form.recipient_email.value|default:'' }}">
+                        {% if form.recipient_email.errors %}
+                        <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                            {{ form.recipient_email.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="{{ form.recipient_company.id_for_label }}">
+                            Company
+                        </label>
+                        <input type="text" id="{{ form.recipient_company.id_for_label }}" name="recipient_company"
+                            class="gmail-input" readonly value="{{ form.recipient_company.value|default:'' }}">
+                        {% if form.recipient_company.errors %}
+                        <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                            {{ form.recipient_company.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="{{ form.recipient_department.id_for_label }}">
+                            Department
+                        </label>
+                        <input type="text" id="{{ form.recipient_department.id_for_label }}" name="recipient_department"
+                            class="gmail-input" readonly value="{{ form.recipient_department.value|default:'' }}">
+                        {% if form.recipient_department.errors %}
+                        <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                            {{ form.recipient_department.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="destination-location-display">
+                            Location
+                        </label>
+                        <input type="text" id="destination-location-display" name="destination_location_display"
+                            class="gmail-input" readonly value="{{ form.assigned_location_text.value|default:'' }}">
+                        <div style="display: none;">
+                            {{ form.destination_location }}
+                        </div>
+                        {% if form.destination_location.errors %}
+                        <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                            {{ form.destination_location.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="{{ form.assigned_location_text.id_for_label }}">
+                            Assigned Location
+                        </label>
+                        <input type="text" id="{{ form.assigned_location_text.id_for_label }}"
+                            name="assigned_location_text" class="gmail-input" readonly
+                            value="{{ form.assigned_location_text.value|default:'' }}">
+                        {% if form.assigned_location_text.errors %}
+                        <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                            {{ form.assigned_location_text.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="gmail-form-group">
+                    <label class="gmail-label" for="{{ form.description.id_for_label }}">
+                        Description
+                    </label>
+                    <textarea id="{{ form.description.id_for_label }}" name="description" class="gmail-textarea"
+                        placeholder="Enter description...">{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.errors %}
+                    <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                        {{ form.description.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="gmail-form-group">
+                    <label class="gmail-label" for="{{ form.remarks.id_for_label }}">
+                        Remarks (Optional)
+                    </label>
+                    <textarea id="{{ form.remarks.id_for_label }}" name="remarks" class="gmail-textarea"
+                        placeholder="Optional remarks or notes..."
+                        value="{{ form.remarks.value|default:'' }}">{{ form.remarks.value|default:'' }}</textarea>
+                    {% if form.remarks.errors %}
+                    <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                        {{ form.remarks.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="gmail-form-group">
+                    <label class="gmail-label" for="{{ form.attachments.id_for_label }}">
+                        <span class="material-icons"
+                            style="font-size: 18px; vertical-align: middle; margin-right: 6px;">attach_file</span>
+                        Image Attachments (Optional)
+                    </label>
+                    {{ form.attachments }}
+                    <small style="color: #5f6368; display: block; margin-top: 8px;">
+                        Accepted formats: JPG, PNG, GIF, BMP, WebP (Max 5MB total)
+                    </small>
+                    <div id="file-size-info" style="color: #1a73e8; font-size: 12px; margin-top: 4px; display: none;">
+                        Total size: <span id="total-size">0</span> / 5.00 MB
+                    </div>
+                    {% if form.attachments.errors %}
+                    <div style="color: var(--gmail-red); font-size: 12px; margin-top: 4px;">
+                        {{ form.attachments.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+
+
+                {% if form.non_field_errors %}
+                <div
+                    style="color: var(--gmail-red); margin-bottom: 16px; padding: 12px; background: #fce8e6; border-radius: 4px;">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="button-group">
+                    <button type="submit" id="submitBtn" class="gmail-btn gmail-btn-primary">
+                        <span class="material-icons">send</span>
+                        Submit Transmittal
+                    </button>
+                    <a href="{% url 'accounts:dashboard' %}" class="gmail-btn gmail-btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to disable submit button on form submission
+    function disableSubmitButton() {
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.innerHTML = '<span class="material-icons">schedule</span> Sending...';
+        }
+    }
+
+    // Store user data for auto-population
+    const userData = {
+        {% for profile in approved_users %}
+    '{{ profile.id }}': {
+        name: '{{ profile.get_full_name|escapejs }}',
+            email: '{{ profile.user.email|escapejs }}',
+                company: '{{ profile.company|escapejs }}',
+                    department: '{{ profile.department|escapejs }}',
+                        location: '{{ profile.assigned_location.name|escapejs }}',
+                            location_id: '{{ profile.assigned_location.id }}'
+    },
+    {% endfor %}
+    };
+
+    const entryModeRadios = document.querySelectorAll('input[name="entry_mode"]');
+    const userSelectSection = document.getElementById('userSelectSection');
+    // Autocomplete elements
+    const userAutocompleteInput = document.getElementById('user-autocomplete-input');
+    const userAutocompleteList = document.getElementById('user-autocomplete-list');
+    const userAutocompleteId = document.getElementById('user-autocomplete-id');
+    const nameInput = document.getElementById('{{ form.recipient_name.id_for_label }}');
+    const emailInput = document.getElementById('{{ form.recipient_email.id_for_label }}');
+    const companyInput = document.getElementById('{{ form.recipient_company.id_for_label }}');
+    const departmentInput = document.getElementById('{{ form.recipient_department.id_for_label }}');
+    const locationInput = document.getElementById('{{ form.assigned_location_text.id_for_label }}');
+    const destinationLocationSelect = document.getElementById('{{ form.destination_location.id_for_label }}');
+    const destinationLocationDisplay = document.getElementById('destination-location-display');
+
+    // Add Gmail styling classes
+    // Remove select styling, handled by input
+    if (nameInput) nameInput.className = 'gmail-input';
+    if (emailInput) emailInput.className = 'gmail-input';
+    if (companyInput) companyInput.className = 'gmail-input';
+    if (departmentInput) departmentInput.className = 'gmail-input';
+    if (locationInput) locationInput.className = 'gmail-input';
+    // fileInput styling handled by custom CSS, no need to add class here to manual input
+    const descInput = document.getElementById('{{ form.description.id_for_label }}');
+    if (descInput) descInput.className = 'gmail-textarea';
+    const remarksInput = document.getElementById('{{ form.remarks.id_for_label }}');
+    if (remarksInput) {
+        remarksInput.className = 'gmail-textarea';
+        // Don't clear - let initial data show through
+    }
+    if (destinationLocationSelect) destinationLocationSelect.className = 'gmail-select';
+
+    // Handle mode change
+    function handleModeChange() {
+        const selectedMode = document.querySelector('input[name="entry_mode"]:checked').value;
+
+        if (selectedMode === 'select') {
+            userSelectSection.classList.remove('hidden');
+            nameInput.readOnly = true;
+            emailInput.readOnly = true;
+            companyInput.readOnly = true;
+            departmentInput.readOnly = true;
+            locationInput.readOnly = true;
+            destinationLocationDisplay.readOnly = true;
+        } else {
+            userSelectSection.classList.add('hidden');
+            nameInput.readOnly = false;
+            emailInput.readOnly = false;
+            companyInput.readOnly = false;
+            departmentInput.readOnly = false;
+            locationInput.readOnly = false;
+            destinationLocationDisplay.readOnly = false;
+            nameInput.value = '';
+            emailInput.value = '';
+            companyInput.value = '';
+            locationInput.value = '';
+            departmentInput.value = '';
+            destinationLocationDisplay.value = '';
+            destinationLocationSelect.value = '';
+            userAutocompleteInput.value = '';
+            userAutocompleteId.value = '';
+        }
+    }
+
+
+    // --- Autocomplete logic ---
+    function filterUsers(query) {
+        const results = [];
+        if (!query) return results;
+        const lower = query.toLowerCase();
+        for (const [id, data] of Object.entries(userData)) {
+            if (data.name.toLowerCase().includes(lower) || id === query) {
+                results.push({ id, name: data.name });
+            }
+        }
+        return results;
+    }
+
+    function showAutocompleteList(items) {
+        userAutocompleteList.innerHTML = '';
+        if (items.length === 0) {
+            userAutocompleteList.style.display = 'none';
+            return;
+        }
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.textContent = item.name;
+            div.style.cursor = 'pointer';
+            div.style.padding = '12px';
+            div.style.borderBottom = '1px solid #f0f0f0';
+            div.style.transition = 'background-color 0.2s ease';
+            div.className = 'autocomplete-item';
+
+            // Hover effect
+            div.addEventListener('mouseenter', function () {
+                this.style.backgroundColor = '#e8f0fe';
+            });
+            div.addEventListener('mouseleave', function () {
+                this.style.backgroundColor = 'transparent';
+            });
+
+            // Click to select - use click, not mousedown
+            div.addEventListener('click', function (e) {
+                e.stopPropagation();
+                selectUser(item.id);
+                userAutocompleteList.style.display = 'none';
+                userAutocompleteInput.focus();
+            });
+
+            userAutocompleteList.appendChild(div);
+        });
+        userAutocompleteList.style.display = 'block';
+    }
+
+    function selectUser(userId) {
+        if (userId && userData[userId]) {
+            const data = userData[userId];
+            userAutocompleteInput.value = data.name;
+            userAutocompleteId.value = userId;
+            nameInput.value = data.name;
+            emailInput.value = data.email;
+            companyInput.value = data.company;
+            departmentInput.value = data.department;
+            locationInput.value = data.location;
+            destinationLocationSelect.value = data.location_id;
+            destinationLocationDisplay.value = data.location;
+        } else {
+            userAutocompleteInput.value = '';
+            userAutocompleteId.value = '';
+            nameInput.value = '';
+            emailInput.value = '';
+            companyInput.value = '';
+            departmentInput.value = '';
+            locationInput.value = '';
+            destinationLocationSelect.value = '';
+            destinationLocationDisplay.value = '';
+        }
+        userAutocompleteList.style.display = 'none';
+    }
+
+    userAutocompleteInput.addEventListener('input', function () {
+        const val = this.value;
+        if (!val) {
+            userAutocompleteId.value = '';
+            showAutocompleteList([]);
+            return;
+        }
+        const matches = filterUsers(val);
+        showAutocompleteList(matches);
+        // If exact match, auto-select
+        const exact = Object.entries(userData).find(([id, data]) => data.name.toLowerCase() === val.toLowerCase());
+        if (exact) {
+            selectUser(exact[0]);
+        } else {
+            userAutocompleteId.value = '';
+        }
+    });
+
+    userAutocompleteInput.addEventListener('keydown', function (e) {
+        // Hide dropdown when Tab is pressed
+        if (e.key === 'Tab') {
+            userAutocompleteList.style.display = 'none';
+        }
+        // Hide dropdown when Escape is pressed
+        if (e.key === 'Escape') {
+            userAutocompleteList.style.display = 'none';
+        }
+    });
+
+    userAutocompleteInput.addEventListener('blur', function () {
+        // Hide dropdown after slight delay
+        setTimeout(() => {
+            userAutocompleteList.style.display = 'none';
+        }, 300);
+    });
+
+    userAutocompleteInput.addEventListener('focus', function () {
+        const val = this.value;
+        if (val) {
+            const matches = filterUsers(val);
+            showAutocompleteList(matches);
+        }
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function (e) {
+        if (e.target !== userAutocompleteInput && e.target.parentElement !== userAutocompleteList) {
+            userAutocompleteList.style.display = 'none';
+        }
+    });
+
+    // Attach event listeners
+    entryModeRadios.forEach(radio => {
+        radio.addEventListener('change', handleModeChange);
+    });
+
+    // Initialize on page load
+    // Check if we have initial data (for reverse transmittal)
+    // If recipient_name field has a value, set mode to 'select'
+    const hasInitialData = nameInput && nameInput.value;
+    if (hasInitialData) {
+        const selectRadio = document.querySelector('input[name="entry_mode"][value="select"]');
+        if (selectRadio) {
+            selectRadio.checked = true;
+        }
+    }
+
+    handleModeChange();
+
+    // After handleModeChange, if we have initial data, populate the autocomplete input
+    if (hasInitialData && userAutocompleteInput && nameInput.value) {
+        userAutocompleteInput.value = nameInput.value;
+        {% if form.selected_user.value %}
+        userAutocompleteId.value = "{{ form.selected_user.value }}";
+        {% endif %}
+    }
+
+    // If destination_location has a value (location ID), fetch and display the location name
+    if (destinationLocationSelect && destinationLocationSelect.value) {
+        const locationId = destinationLocationSelect.value;
+        fetch(`/transmittals/api/location/${locationId}/custodian/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.custodian_name && destinationLocationDisplay) {
+                    destinationLocationDisplay.value = data.custodian_name;
+                }
+            })
+            .catch(error => console.error('Error fetching location:', error));
+    }
+
+    // Also populate assigned_location_text from destination_location
+    if (destinationLocationSelect && destinationLocationSelect.value) {
+        const locationId = destinationLocationSelect.value;
+        // Get the selected option text which is the location name
+        const selectedOption = destinationLocationSelect.options[destinationLocationSelect.selectedIndex];
+        if (selectedOption && locationInput) {
+            locationInput.value = selectedOption.text;
+        }
+    }
+
+    // Handle destination location change
+    if (destinationLocationSelect) {
+        destinationLocationSelect.addEventListener('change', function () {
+            const locationId = this.value;
+            if (locationId) {
+                // Fetch custodian for this location
+                fetch(`/transmittals/api/location/${locationId}/custodian/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.custodian_name) {
+                            locationInput.value = data.custodian_name;
+                        } else {
+                            locationInput.value = '';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching custodian:', error);
+                        locationInput.value = '';
+                    });
+            } else {
+                locationInput.value = '';
+            }
+        });
+    }
+
+    // Multiple image file validation (client-side) - 5MB total limit
+    const fileInput = document.getElementById('file-input');
+    const MAX_TOTAL_SIZE = 5 * 1024 * 1024; // 5MB total in bytes
+    const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            const files = this.files;
+            let totalSize = 0;
+            let invalidFiles = [];
+
+            // Validate all files
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+                // Check file type
+                if (!ALLOWED_EXTENSIONS.includes(fileExt) && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                    invalidFiles.push(file.name);
+                }
+
+                totalSize += file.size;
+            }
+
+            // Show error if invalid file types
+            if (invalidFiles.length > 0) {
+                alert(`Invalid file types:\n${invalidFiles.join('\n')}\n\nOnly image files are allowed (JPG, PNG, GIF, BMP, WebP).`);
+                this.value = '';
+                document.getElementById('file-size-info').style.display = 'none';
+                return;
+            }
+
+            // Check total size
+            if (totalSize > MAX_TOTAL_SIZE) {
+                const totalMB = (totalSize / (1024 * 1024)).toFixed(2);
+                alert(`Total attachment size (${totalMB}MB) exceeds the maximum limit of 5MB.\n\nPlease remove some files or choose smaller files.`);
+                this.value = '';
+                document.getElementById('file-size-info').style.display = 'none';
+                return;
+            }
+
+            // Show total size if files are selected
+            if (files.length > 0) {
+                const totalMB = (totalSize / (1024 * 1024)).toFixed(2);
+                document.getElementById('total-size').textContent = totalMB;
+                document.getElementById('file-size-info').style.display = 'block';
+            } else {
+                document.getElementById('file-size-info').style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,286 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Transmittal Report System{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/cdc-logo-round.png' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #046c3b;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        nav {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 20px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #046c3b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            background: #03522c;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .messages {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+
+        .message.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .errorlist {
+            list-style: none;
+            margin-top: 5px;
+            padding-left: 0;
+        }
+
+        .errorlist li {
+            color: #dc3545;
+            font-size: 12px;
+            padding: 3px 0;
+        }
+
+        a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .link-group {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .link-group a {
+            margin: 0 10px;
+        }
+
+        .fieldset-group {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .fieldset-group legend {
+            padding: 0 10px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .box {
+                padding: 20px;
+            }
+
+            h1,
+            h2 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+
+        {% if user.is_authenticated %}
+        {% if user.is_staff %}
+        <a href="{% url 'accounts:admin_dashboard' %}">Admin Dashboard</a>
+        {% else %}
+        <a href="{% url 'accounts:dashboard' %}">My Dashboard</a>
+        {% endif %}
+        <a href="{% url 'accounts:logout' %}">Logout</a>
+        {% else %}
+        <a href="{% url 'accounts:login' %}">Login</a>
+        <a href="{% url 'accounts:register' %}">Register</a>
+        {% endif %}
+    </nav>
+
+    <div class="container">
+        <div class="box">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <img src="{% static 'images/cdc-logo.png' %}" alt="Logo"
+                    style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #046c3b; padding: 2px;">
+                <h2 style="margin-top: 12px; color: #046c3b; font-size: 20px;">Transmittal Report System</h2>
+            </div>
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                <li class="message {{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    <!-- Session Timeout Script -->
+    {% if user.is_authenticated %}
+    <script>
+        (function () {
+            // 15 minutes in milliseconds
+            const SESSION_TIMEOUT = 900000;
+            const ACTIVITY_KEY = 'sessionLastActivity';
+
+            function updateActivity() {
+                localStorage.setItem(ACTIVITY_KEY, Date.now());
+            }
+
+            // Initialize if not set
+            if (!localStorage.getItem(ACTIVITY_KEY)) {
+                updateActivity();
+            }
+
+            // Listen for activity
+            const events = ['mousemove', 'click', 'keypress', 'scroll', 'touchstart'];
+            events.forEach(event => {
+                window.addEventListener(event, updateActivity, { passive: true });
+            });
+
+            // Check every 10 seconds
+            setInterval(function () {
+                const lastActivity = parseInt(localStorage.getItem(ACTIVITY_KEY) || Date.now());
+                if (Date.now() - lastActivity > SESSION_TIMEOUT) {
+                    // Redirect to logout which then redirects to login
+                    window.location.href = "{% url 'accounts:logout' %}";
+                }
+            }, 10000);
+        })();
+    </script>
+    {% endif %}
+</body>
+
+</html>

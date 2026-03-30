@@ -1,0 +1,300 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}Cancel Transmittal{% endblock %}
+
+{% block content %}
+<style>
+    .container {
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .cancel-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .cancel-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .cancel-header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    .cancel-header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        font-size: 14px;
+    }
+
+    .cancel-body {
+        padding: 30px;
+    }
+
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: #856404;
+    }
+
+    .warning-box strong {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .transmittal-info {
+        background: #f8f9fa;
+        border-left: 4px solid #dc3545;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+
+    .info-item {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .info-item strong {
+        color: #333;
+        display: inline-block;
+        width: 150px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 14px;
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #dc3545;
+        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+        background: #c82333;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+    }
+
+    .btn-danger:disabled {
+        opacity: 0.8;
+        cursor: wait;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3);
+    }
+
+    .btn-secondary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .cancel-footer {
+        background: #f8f9fa;
+        padding: 15px 30px;
+        border-top: 1px solid #dee2e6;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+</style>
+
+<div class="container">
+    <div class="cancel-card">
+        <!-- Header -->
+        <div class="cancel-header">
+            <h1>⚠️ Cancel Transmittal</h1>
+            <p>Once cancelled, this action cannot be undone</p>
+        </div>
+
+        <!-- Body -->
+        <div class="cancel-body">
+            <!-- Warning Message -->
+            <div class="warning-box">
+                <strong>Important!</strong>
+                <p>You are about to cancel transmittal <strong>{{ transmittal.reference_number }}</strong>. This action can only be performed while the transmittal is in "In Transit" status. Once cancelled, the recipient and custodian will be notified.</p>
+            </div>
+
+            <!-- Transmittal Details -->
+            <div class="transmittal-info">
+                <div class="info-item">
+                    <strong>Reference:</strong> {{ transmittal.reference_number }}
+                </div>
+                <div class="info-item">
+                    <strong>Recipient:</strong> {{ transmittal.recipient_name }}
+                </div>
+                <div class="info-item">
+                    <strong>Destination:</strong> {% if transmittal.assigned_location_text %}{{ transmittal.assigned_location_text }}{% elif transmittal.destination_location %}{{ transmittal.destination_location.name }}{% else %}Unknown{% endif %}
+                </div>
+                <div class="info-item">
+                    <strong>Status:</strong> {{ transmittal.get_status_display }}
+                </div>
+                <div class="info-item">
+                    <strong>Sent:</strong> {% if transmittal.sent_at %}{{ transmittal.sent_at|date:"M d, Y g:i A" }}{% endif %}
+                </div>
+            </div>
+
+            <!-- Cancel Form -->
+            <form id="cancelForm" method="post" onsubmit="return handleCancelSubmit(event)">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger" style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 4px; margin-bottom: 20px;">
+                    {% for error in form.non_field_errors %}
+                    <p style="margin: 0;">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="reason">Reason for Cancellation <span style="color: #dc3545;">*</span></label>
+                    <textarea name="reason" id="reason" placeholder="Provide any additional details about why you're cancelling this transmittal..." required></textarea>
+                    {% if form.reason.errors %}
+                    <div style="color: #dc3545; font-size: 12px; margin-top: 4px;">
+                        {% for error in form.reason.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" name="confirm" id="confirm" required style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="confirm" style="margin: 0; cursor: pointer;">I confirm I want to cancel this transmittal</label>
+                    {% if form.confirm.errors %}
+                    <div style="color: #dc3545; font-size: 12px;">
+                        {% for error in form.confirm.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button type="submit" id="cancelBtn" class="btn btn-danger">🗑️ Cancel Transmittal</button>
+                    <a href="{% url 'transmittals:detail' transmittal.id %}" id="goBackBtn" class="btn btn-secondary">← Go Back</a>
+                </div>
+            </form>
+
+            <script>
+                let isCancelling = false;
+
+                function handleCancelSubmit(event) {
+                    // Prevent default form submission
+                    event.preventDefault();
+
+                    // Prevent duplicate submissions
+                    if (isCancelling) {
+                        return false;
+                    }
+
+                    // Show confirmation dialog
+                    if (!confirm('Are you absolutely sure? This cannot be undone.')) {
+                        return false;
+                    }
+
+                    // Set cancelling flag
+                    isCancelling = true;
+
+                    // Get buttons
+                    const cancelBtn = document.getElementById('cancelBtn');
+                    const goBackBtn = document.getElementById('goBackBtn');
+                    const form = document.getElementById('cancelForm');
+
+                    // Update button appearance
+                    cancelBtn.disabled = true;
+                    goBackBtn.disabled = true;
+                    cancelBtn.innerHTML = '<span class="spinner"></span>Processing Cancellation...';
+
+                    // Submit the form after a short delay to show the loading state
+                    setTimeout(() => {
+                        form.submit();
+                    }, 300);
+
+                    return false;
+                }
+            </script>
+        </div>
+
+        <!-- Footer -->
+        <div class="cancel-footer">
+            <p>If you cancel this transmittal, both the recipient and custodian will receive a notification about the cancellation.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

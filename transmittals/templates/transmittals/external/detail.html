@@ -1,0 +1,695 @@
+{% extends 'transmittals/external_base.html' %}
+{% load static %}
+
+{% block title %}{{ transmittal.reference_number }} | External Transmittal{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Styling from internal report layout */
+    .report-container {
+        max-width: 800px;
+        margin: 20px auto;
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+    }
+
+    .report-logo-text {
+        text-align: left;
+    }
+
+    .report-logo-text h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #000;
+    }
+
+    .report-logo-text p {
+        margin: 2px 0 0 0;
+        font-size: 13px;
+        color: #555;
+        line-height: 1.2;
+    }
+
+    .report-title {
+        text-align: center;
+        margin: 24px 0 10px 0;
+        font-size: 32px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #000;
+    }
+
+    .report-meta {
+        text-align: center;
+        margin-bottom: 30px;
+        font-weight: 700;
+        color: #000;
+    }
+
+    .report-meta p {
+        margin: 0;
+        font-size: 20px;
+    }
+
+    .report-info-grid {
+        border: 1px solid #333;
+        border-radius: 4px;
+        display: flex;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .report-column {
+        flex: 1;
+        padding: 16px;
+    }
+
+    .report-column:first-child {
+        border-right: 1px solid #333;
+    }
+
+    .info-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .info-table td {
+        padding: 6px 0;
+        vertical-align: top;
+        font-size: 14px;
+    }
+
+    .info-table td:first-child {
+        font-weight: 600;
+        width: 110px;
+        color: #000;
+    }
+
+    .report-details-box {
+        border: 1px solid #333;
+        border-radius: 4px;
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+
+    .detail-row {
+        display: flex;
+        margin-bottom: 12px;
+    }
+
+    .detail-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        width: 110px;
+        flex-shrink: 0;
+        color: #000;
+    }
+
+    .detail-text {
+        flex: 1;
+        white-space: pre-wrap;
+        font-size: 14px;
+    }
+
+    .status-badge-container {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+
+    /* Actions & Audit */
+    .non-report-section {
+        max-width: 800px;
+        margin: 20px auto;
+    }
+
+    .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-700);
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Cards - for non-report sections */
+    .detail-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .detail-card-header {
+        background: var(--gray-100);
+        padding: 14px 24px;
+        border-bottom: 1px solid var(--border-gray);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .detail-card-header h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--gray-900);
+    }
+
+    .detail-card-header .material-icons {
+        font-size: 20px;
+        color: var(--ext-purple);
+    }
+
+    .detail-card-body {
+        padding: 24px;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 24px;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--border-gray);
+    }
+
+    .timeline-entry {
+        position: relative;
+        margin-bottom: 16px;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -21px;
+        top: 6px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--ext-purple);
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px var(--ext-purple);
+    }
+
+    .timeline-content {
+        background: var(--gray-100);
+        padding: 10px 14px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .timeline-action {
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .timeline-meta {
+        color: var(--gray-700);
+        font-size: 12px;
+        margin-top: 3px;
+    }
+
+    .timeline-notes {
+        margin-top: 4px;
+        color: var(--gray-900);
+    }
+
+    .actions-panel {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+        padding: 20px 24px;
+        margin-bottom: 20px;
+    }
+
+    .actions-panel h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-700);
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-gray);
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .deadline-warning {
+        padding: 12px 16px;
+        background: #fff3e0;
+        border-left: 4px solid #f57c00;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        color: #bf360c;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .deadline-overdue {
+        background: #fce4ec;
+        border-left-color: var(--gmail-red);
+        color: #c2185b;
+    }
+
+    @media print {
+
+        .no-print,
+        .gmail-topbar,
+        .gmail-sidebar {
+            display: none !important;
+        }
+
+        .gmail-layout {
+            margin-top: 0 !important;
+            display: block !important;
+        }
+
+        .gmail-main {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .report-container {
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        body {
+            background-color: #fff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .detail-container {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+    }
+
+    /* Original badge styles used in report */
+    .badge {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+
+    /* Loading Button State */
+    .btn.loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.9;
+    }
+
+    .btn.loading::after {
+        content: '';
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-left: 8px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+
+    <!-- TOOLBAR -->
+    <div style="max-width:800px; margin: 0 auto 20px auto; display:flex; justify-content:space-between; align-items:center;"
+        class="no-print">
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            <span class="material-icons"
+                style="font-size:18px; vertical-align:middle; margin-right:4px;">arrow_back</span> Back
+        </a>
+        <button class="btn btn-secondary" onclick="window.print()">
+            <span class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">print</span>
+            Print Report
+        </button>
+    </div>
+
+    <!-- DEADLINE WARNING (Non-print) -->
+    <div style="max-width:800px; margin: 0 auto 20px auto;" class="no-print">
+        <div class="deadline-warning" id="deadline-alert" style="display:none;">
+            <span class="material-icons">warning</span>
+            <span id="deadline-text"></span>
+        </div>
+    </div>
+
+    <!-- THE REPORT LAYOUT -->
+    <div class="report-container">
+        <!-- Letterhead -->
+        <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 10px;">
+            <img src="{% static 'images/cdc-logo.png' %}" alt="CDC Logo"
+                style="width: 85px; height: auto; object-fit: contain;">
+            <div class="report-logo-text">
+                <h2>CDC Manufacturing Corporation</h2>
+                <p>#8 University Avenue Ext, Potrero, Malabon City, Philippines</p>
+            </div>
+        </div>
+
+        <h1 class="report-title">External Transmittal Report</h1>
+
+        <div class="report-meta">
+            <p>Ref no.: {{ transmittal.reference_number }}</p>
+            <div style="font-size:14px; font-weight:400; margin-top:5px; color:#555;">
+                Generated on {{ transmittal.created_at|date:"F d, Y H:i" }}
+            </div>
+        </div>
+        <!-- Status Badges in Report -->
+        <div class="status-badge-container">
+            {% if transmittal.main_type == 'for_keep' %}
+            <span class="badge badge-keep">FOR KEEP</span>
+            {% else %}
+            <span class="badge badge-return">FOR RETURN</span>
+            {% endif %}
+
+            {% if transmittal.status == 'in_transit' %}
+            <span class="badge badge-transit">IN TRANSIT</span>
+            {% elif transmittal.status == 'received' %}
+            <span class="badge badge-received">RECEIVED</span>
+            {% elif transmittal.status == 'open' %}
+            <span class="badge badge-open">OPEN</span>
+            {% elif transmittal.status == 'closed' %}
+            <span class="badge badge-closed">CLOSED</span>
+            {% endif %}
+        </div>
+        
+
+        <!-- Info Grid -->
+        <div class="report-info-grid">
+            <!-- Left: Origin (Sender) -->
+            <div class="report-column">
+                <table class="info-table">
+                    <tr>
+                        <td>Origin:</td>
+                        <td>{{ sender_user.profile.address|default:"CDC Manufacturing Corp." }}</td>
+                    </tr>
+                    <tr>
+                        <td>From:</td>
+                        <td>{{ transmittal.sender_name }}</td>
+                    </tr>
+                    <tr class="no-print">
+                        <td>Email:</td>
+                        <td>{{ transmittal.sender_email }}</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 8px 0; font-weight: 600; color: #000;">Department:</td>
+                        <td style="padding: 8px 0; color: #000;">{{ sender_user.profile.department|default:"—" }}</td>
+                    </tr>
+                </table>
+            </div>
+            <!-- Right: Destination (Recipient) -->
+            <div class="report-column">
+                <table class="info-table">
+                    <tr>
+                        <td>Destination:</td>
+                        <td>{{ transmittal.recipient_company_address|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td>To:</td>
+                        <td>{{ transmittal.recipient_name|default:"—" }}</td>
+                    </tr>
+                    <tr class="no-print">
+                        <td>Email:</td>
+                        <td>{{ transmittal.recipient_email }}</td>
+                    </tr>
+                    <tr>
+                        <td>Company:</td>
+                        <td>{{ transmittal.recipient_company_name|default:"—" }}</td>
+                    </tr>
+
+
+                </table>
+            </div>
+        </div>
+
+        
+
+        <!-- Transmittal Details -->
+        <div class="report-details-box">
+            <div class="detail-row">
+                <div class="detail-label">Description:</div>
+                <div class="detail-text">{{ transmittal.description }}</div>
+            </div>
+            {% if transmittal.remarks %}
+            <div class="detail-row" style="margin-top:10px;">
+                <div class="detail-label">Remarks:</div>
+                <div class="detail-text">{{ transmittal.remarks }}</div>
+            </div>
+            {% endif %}
+
+            {% if transmittal.date_return %}
+            <div class="detail-row" style="margin-top:10px;">
+                <div class="detail-label">Expected Return:</div>
+                <div class="detail-text" style="font-weight:600;">{{ transmittal.date_return|date:"F d, Y" }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Signatures Area (Report Style) -->
+        <div style="margin-top: 50px; display: flex; justify-content: space-between;">
+            <div style="width: 250px; text-align: center;">
+                {% if sender_user.profile.digital_signature %}
+                <div style="height: 60px; width: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto 15px auto; margin-bottom: -30px; margin-top: -10px; background-color: #ffffff;">
+                    <img src="{{ sender_user.profile.digital_signature.url }}" alt="Sender Signature"
+                        style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
+                {% else %}
+                <div style="height: 80px; width: 120px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto 15px auto; border: 1px dashed #999; border-radius: 4px; background-color: #fafafa; color: #999; font-size: 11px;">
+                    No signature
+                </div>
+                {% endif %}
+                <div style="border-bottom: 1px solid #000; height: 1px; margin-top: 15px;"></div>
+                <p style="margin-top: 8px; font-size: 13px; font-weight: 600;">Prepared By</p>
+                <p style="font-size: 12px; color: #555;">{{ transmittal.sender_name }}</p>
+            </div>
+            <div style="width: 250px; text-align: center;">
+                <div style="border-bottom: 1px solid #000; height: 30px;">
+                    {% if transmittal.status == 'received' or transmittal.status == 'closed' %}
+                    <span style="font-size: 14px; font-style: italic; color: #2e7d32;">Received & Confirmed</span>
+                    {% endif %}
+                </div>
+                <p style="margin-top: 5px; font-size: 13px; font-weight: 600;">Recipient Acknowledgement</p>
+                <p style="font-size: 12px; color: #555;">{% if transmittal.recipient_name %}{{ transmittal.recipient_name }}{% else %}{{ transmittal.recipient_email }}{% endif %}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NON-PRINTABLE SECTIONS (Actions, Audit, Attachments) -->
+    <div class="non-report-section no-print">
+
+        <!-- INITIAL ATTACHMENT -->
+        {% if transmittal.attachment %}
+        <div class="detail-card">
+            <div class="detail-card-header">
+                <span class="material-icons">attach_file</span>
+                <h3>Initial Attachment</h3>
+            </div>
+            <div class="detail-card-body">
+                <a href="{{ transmittal.attachment.url }}" target="_blank" class="btn btn-secondary">
+                    <span class="material-icons" style="font-size:18px;">preview</span> View Initial Document
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- PROOF ATTACHMENTS -->
+        {% if attachments %}
+        <div class="detail-card">
+            <div class="detail-card-header">
+                <span class="material-icons">photo_library</span>
+                <h3>Proof of Transitions ({{ attachments|length }})</h3>
+            </div>
+            <div class="detail-card-body">
+                {% for att in attachments %}
+                <div
+                    style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--gray-100);">
+                    <div>
+                        <div style="font-weight:500;font-size:14px;">{{ att.attachment_type }}</div>
+                        <div style="font-size:12px;color:var(--gray-700);">{{ att.uploaded_at|date:"M d, Y H:i" }}</div>
+                    </div>
+                    <a href="{{ att.file.url }}" target="_blank" class="btn btn-secondary" style="padding:6px 14px;">
+                        <span class="material-icons" style="font-size:16px;">visibility</span> View
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ACTIONS -->
+        {% if user.email == transmittal.sender_email and transmittal.status != 'closed' %}
+        <div class="actions-panel">
+            <h3>Update Transmittal Status</h3>
+            <div class="action-buttons">
+                {% if transmittal.status == 'in_transit' %}
+                <a href="{% url 'transmittals:external_mark_received' transmittal.pk %}" 
+                   class="btn btn-success mark-received-btn"
+                   onclick="handleMarkReceived(event, this)"
+                   style="padding:10px 20px;">
+                    <span class="material-icons" style="font-size:20px;">check_circle</span> Step 1: Mark as Received
+                </a>
+                <a href="{% url 'transmittals:cancel_external_transmittal' transmittal.pk %}" 
+                   class="btn"
+                   style="background-color: #d32f2f; color: white; padding:10px 20px;">
+                    <span class="material-icons" style="font-size:20px;">delete</span> Cancel Transmittal
+                </a>
+                {% endif %}
+
+                {% if transmittal.is_for_return and transmittal.status == 'received' and transmittal.received_status == 'open' %}
+                <a href="{% url 'transmittals:external_full_return' transmittal.pk %}" class="btn btn-success">
+                    <span class="material-icons" style="font-size:18px;">assignment_turned_in</span> Full Return
+                </a>
+                <a href="{% url 'transmittals:external_partial_return' transmittal.pk %}" class="btn"
+                    style="background:#ff9800;color:white;">
+                    <span class="material-icons" style="font-size:18px;">call_split</span> Partial Return
+                </a>
+                <a href="{% url 'transmittals:external_paid_sample' transmittal.pk %}" class="btn btn-primary">
+                    <span class="material-icons" style="font-size:18px;">sell</span> Paid Sample
+                </a>
+                <a href="{% url 'transmittals:external_convert_to_keep' transmittal.pk %}" class="btn btn-secondary">
+                    <span class="material-icons" style="font-size:18px;">lock</span> For Keep
+                </a>
+                {% endif %}
+            </div>
+            {% if transmittal.status == 'in_transit' %}
+            <div
+                style="margin-top:16px; font-size:13px; color:var(--gray-600); display:flex; align-items:center; gap:8px; background:var(--gray-50); padding:10px; border-radius:6px; border:1px solid var(--gray-200);">
+                <span class="material-icons" style="font-size:18px; color:var(--gmail-blue);">info</span>
+                <span>Delivery must be confirmed with proof before further actions are available.</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- AUDIT TRAIL (No Print) -->
+        {% if audit_trail %}
+        <div class="detail-card no-print">
+            <div class="detail-card-header">
+                <span class="material-icons">history</span>
+                <h3>Activity History</h3>
+            </div>
+            <div class="detail-card-body">
+                <div class="timeline">
+                    {% for entry in audit_trail %}
+                    <div class="timeline-entry">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-action">{{ entry.get_action_display|default:entry.action }}</div>
+                            <div class="timeline-meta">
+                                {{ entry.timestamp|date:"M d, Y H:i" }} &mdash; {{ entry.performed_by_email }}
+                            </div>
+                            {% if entry.notes %}
+                            <div class="timeline-notes">{{ entry.notes }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- DEADLINE METADATA FOR JS -->
+    <div id="transmittal-metadata" data-is-for-return="{{ transmittal.is_for_return|yesno:'true,false' }}"
+        data-received-status="{{ transmittal.received_status|default:'' }}"
+        data-date-deadline="{{ transmittal.date_deadline|date:'Y-m-d'|default:'' }}" style="display:none;"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function handleMarkReceived(event, btn) {
+        event.preventDefault();
+        
+        btn.classList.add('loading');
+        btn.disabled = true;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="material-icons" style="font-size:20px;">schedule</span> Confirming...';
+        
+        // Navigate to the URL after a short delay to show the loading state
+        setTimeout(() => {
+            window.location.href = btn.href;
+        }, 500);
+    }
+
+    // Deadline alert logic (client-side)
+    (function () {
+        const meta = document.getElementById('transmittal-metadata');
+        if (!meta) return;
+
+        const isForReturn = meta.getAttribute('data-is-for-return') === 'true';
+        const receivedStatus = meta.getAttribute('data-received-status');
+        const deadlineStr = meta.getAttribute('data-date-deadline');
+
+        if (isForReturn && receivedStatus === 'open' && deadlineStr) {
+            const deadline = new Date(deadlineStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            deadline.setHours(0, 0, 0, 0);
+
+            const diffTime = today - deadline;
+            const diffDays = Math.floor(diffTime / 86400000);
+
+            const alertEl = document.getElementById('deadline-alert');
+            const textEl = document.getElementById('deadline-text');
+
+            if (alertEl && textEl) {
+                if (diffDays === 0) {
+                    textEl.textContent = '⚠ Deadline is TODAY — return expected immediately.';
+                    alertEl.style.display = 'flex';
+                } else if (diffDays > 0) {
+                    textEl.textContent = '⚠ OVERDUE — ' + diffDays + ' day' + (diffDays > 1 ? 's' : '') + ' past deadline. Automated reminders have been sent.';
+                    alertEl.classList.add('deadline-overdue');
+                    alertEl.style.display = 'flex';
+                } else {
+                    const daysLeft = Math.abs(diffDays);
+                    if (daysLeft <= 7) {
+                        textEl.textContent = '📅 Deadline approaching — ' + daysLeft + ' day' + (daysLeft > 1 ? 's' : '') + ' remaining.';
+                        alertEl.style.display = 'flex';
+                    }
+                }
+            }
+        }
+    })();
+</script>
+{% endblock %}

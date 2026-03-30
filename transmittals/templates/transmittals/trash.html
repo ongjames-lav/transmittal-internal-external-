@@ -1,0 +1,140 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}Trash{% endblock %}
+
+{% block content %}
+<div class="inbox-container">
+    <div class="inbox-header">
+        <h1>Trash</h1>
+    </div>
+
+    <!-- Actions Bar -->
+    <div class="inbox-actions"
+        style="padding: 10px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="select-all" onclick="toggleAll(this)">
+            <label for="select-all" style="font-size: 14px; color: var(--gray-600); cursor: pointer;">Select All</label>
+        </div>
+
+        <!-- Restore Form -->
+        <form method="POST" action="{% url 'transmittals:restore_emails' %}" id="restore-form" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary" onclick="return validateSelection('restore-form')"
+                style="padding: 6px 12px; font-size: 14px; display: flex; align-items: center; gap: 5px;">
+                <span>↩️</span> Restore
+            </button>
+        </form>
+
+        <!-- Permanent Delete Form -->
+        <form method="POST" action="{% url 'transmittals:permanent_delete_emails' %}" id="delete-forever-form"
+            style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirmDeleteForever('delete-forever-form')"
+                style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;">
+                <span>🗑️</span> Delete Forever
+            </button>
+        </form>
+    </div>
+
+    {% if transmittals %}
+    <ul class="inbox-list">
+        {% for email in transmittals %}
+        <li class="inbox-row" onclick="window.location='{% url 'transmittals:detail' email.id %}'">
+            <div style="display: flex; align-items: center; padding: 0 10px;">
+                <!-- We need to clone the checked inputs into both forms on submit, or use JS to handle submission.
+                     Simpler approach: inputs outside, use JS to populate hidden inputs in forms. -->
+                <input type="checkbox" name="email_select" value="{{ email.id }}" class="email-checkbox"
+                    onclick="event.stopPropagation();">
+            </div>
+
+            <div class="inbox-sender">
+                {% if email.sender == user %}
+                To: {{ email.recipient_name }}
+                {% else %}
+                {{ email.sender.profile.get_full_name }}
+                {% endif %}
+            </div>
+
+            <div class="inbox-subject">
+                <strong>Transmittal Report</strong>
+                <span class="inbox-snippet">
+                    - {{ email.description|truncatechars:100 }}
+                </span>
+            </div>
+
+            <div class="inbox-date">
+                {{ email.date_created|date:"M d" }}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div style="text-align: center; padding: 48px; color: var(--gray-700);">
+        <div style="font-size: 48px; margin-bottom: 16px;">
+            🗑️
+        </div>
+        <div style="font-size: var(--subtitle-size); margin-bottom: 8px;">
+            Trash is empty
+        </div>
+        <div style="font-size: var(--body-size);">
+            Items moved to the trash will be permanently deleted after 30 days.
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleAll(source) {
+        checkboxes = document.getElementsByName('email_select');
+        for (var i = 0, n = checkboxes.length; i < n; i++) {
+            checkboxes[i].checked = source.checked;
+        }
+    }
+
+    function getSelectedIds() {
+        checkboxes = document.getElementsByName('email_select');
+        let ids = [];
+        for (var i = 0, n = checkboxes.length; i < n; i++) {
+            if (checkboxes[i].checked) {
+                ids.push(checkboxes[i].value);
+            }
+        }
+        return ids;
+    }
+
+    function addHiddenInputs(formId) {
+        let form = document.getElementById(formId);
+        // Clear existing hidden inputs
+        let existing = form.querySelectorAll('input[type=hidden][name=email_ids]');
+        existing.forEach(e => e.remove());
+
+        let ids = getSelectedIds();
+        if (ids.length === 0) return false;
+
+        ids.forEach(id => {
+            let input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'email_ids';
+            input.value = id;
+            form.appendChild(input);
+        });
+        return true;
+    }
+
+    function validateSelection(formId) {
+        if (!addHiddenInputs(formId)) {
+            alert('Please select at least one email.');
+            return false;
+        }
+        return true;
+    }
+
+    function confirmDeleteForever(formId) {
+        if (!addHiddenInputs(formId)) {
+            alert('Please select at least one email.');
+            return false;
+        }
+        return confirm('Are you sure you want to delete these emails permanently? This action cannot be undone.');
+    }
+</script>
+{% endblock %}

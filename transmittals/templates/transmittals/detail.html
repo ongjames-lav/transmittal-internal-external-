@@ -1,0 +1,631 @@
+{% extends 'accounts/gmail_base.html' %}
+{% load static %}
+
+{% block title %}Transmittal Detail{% endblock %}
+
+{% block content %}
+<style>
+    /* Styling from email_utils.py adapted for system view */
+    .email-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .email-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .email-header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .email-header p {
+        margin: 5px 0 0 0;
+        font-size: 14px;
+        opacity: 0.9;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .email-content {
+        padding: 30px;
+    }
+
+    .email-section {
+        margin-bottom: 25px;
+    }
+
+    .email-section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #667eea;
+        text-transform: uppercase;
+    }
+
+    .email-info-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .email-info-table td {
+        padding: 8px 0;
+        vertical-align: top;
+    }
+
+    .email-info-table td:first-child {
+        font-weight: 600;
+        color: #555;
+        width: 150px;
+    }
+
+    .email-description-box {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-left: 4px solid #667eea;
+        margin-top: 10px;
+        border-radius: 3px;
+        white-space: pre-wrap;
+    }
+
+    .email-footer {
+        background-color: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: #777;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .email-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background-color: #667eea;
+        color: white;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    @media print {
+        .attachment-section {
+            display: none !important;
+        }
+    }
+</style>
+
+<div class="detail-container">
+    <!-- Action Toolbar -->
+    <div style="margin-bottom: 24px; display: flex; gap: 12px;">
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            ← Back
+        </a>
+        <button class="btn btn-secondary" onclick="window.print()">
+            <span class="material-icons" style="font-size: 16px; margin-right: 4px;">print</span> Print
+        </button>
+    </div>
+
+    <!-- Email Representation -->
+    <div class="email-container">
+        <div class="email-content">
+            <!-- Header with Logo and Company Info -->
+            <div style="text-align: center; margin-bottom: -1px; padding-bottom: -1px;">
+                <div
+                    style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 8px;">
+                    <img src="/static/images/cdc-logo.png" alt="CDC Logo"
+                        style="width: 100px; height: auto; object-fit: contain;">
+                    <div style="text-align: left;">
+                        <h2 style="margin: 0; font-size: 18px; font-weight: 700; line-height: 1.0;">CDC Manufacturing
+                            Corporation</h2>
+                        <p style="margin: 2px 0 0 0; font-size: 13px; color: #555; line-height: 1.0;">#8 University
+                            Avenue Ext, Potrero,
+                            Malabon City, Philippines</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <h3
+                style="text-align: center; margin: 4px 0 6px 0; font-size: 32px; font-weight: 700; text-transform: uppercase; line-height: 1.0;">
+                Transmittal Report</h3>
+
+            <!-- Ref and Date - Centered -->
+            <div style="text-align: center; margin-bottom: 15px; font-weight: 700; color: #000; line-height: 1.0;">
+                <p style="margin: 0; font-size: 20px;"><strong>Ref no.:</strong> {{ transmittal.reference_number }}</p>
+                <p style="margin: 2px 0 0 0; font-size: 14px;"><strong>Date & Time:</strong> {{ sent_at_formatted }}</p>
+            </div>
+
+            <!-- Transmittal Info Table -->
+            <div style="border: 1px solid #333; border-radius: 4px; padding: 0; margin-bottom: 15px; display: flex;">
+                <!-- Left Column -->
+                <div style="flex: 1; padding: 12px; padding-right: 0;">
+                    <table style="width: 100%; border-collapse: collapse; line-height: 1.5;">
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: 600; width: 120px;">Destination:</td>
+                            <td style="padding: 8px 0;">{{ transmittal.destination_location.name }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: 600; color: #000;">To:</td>
+                            <td style="padding: 8px 0; color: #000;">{{ transmittal.recipient_name }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: 600; color: #000;">Department:</td>
+                            <td style="padding: 8px 0; color: #000;">{{ transmittal.recipient_department }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <!-- Divider -->
+                <div style="width: 1px; background-color: #333;"></div>
+                <!-- Right Column -->
+                <div style="flex: 1; padding: 12px; padding-left: 12px;">
+                    <table style="width: 100%; border-collapse: collapse; line-height: 1.5;">
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: 600; color: #000;">Origin:</td>
+                            <td style="padding: 8px 0; color: #000;">{{ transmittal.origin_location.name }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: 600; color: #000;">From:</td>
+                            <td style="padding: 8px 0; color: #000;">{{ sender_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: 600; color: #000;">Department:</td>
+                            <td style="padding: 8px 0; color: #000;">{{ sender_department }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Description & Remarks -->
+            <div style="border: 1px solid #333; border-radius: 4px; padding: 12px; margin-bottom: 20px;">
+                <table style="width: 100%; border-collapse: collapse; line-height: 1.2;">
+                    <tr>
+                        <td style="padding: 8px 0; font-weight: 600; width: 120px; vertical-align: top;">Description:</td>
+                        <td style="padding: 8px 0; white-space: pre-wrap; vertical-align: top;">{{ transmittal.description }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; font-weight: 600; width: 120px; vertical-align: top;">Remarks:</td>
+                        <td style="padding: 8px 0; white-space: pre-wrap; vertical-align: top;">{{ transmittal.remarks }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Attachments Section -->
+            {% if transmittal.attachments.all %}
+            <div class="attachment-section"
+                style="margin-bottom: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; border-left: 4px solid #667eea; line-height: 1.0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <p style="margin: 0; font-weight: 700; color: #667eea;">
+                        <span class="material-icons"
+                            style="font-size: 18px; vertical-align: middle; margin-right: 6px;">attach_file</span>
+                        Attachments ({{ transmittal.attachments.all|length }})
+                    </p>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    {% for attachment in transmittal.attachments.all %}
+                    <div
+                        style="display: flex; align-items: center; gap: 12px; padding: 8px; background-color: white; border-radius: 4px;">
+                        <span class="material-icons" style="color: #667eea;">image</span>
+                        <div style="flex: 1;">
+                            <p style="margin: 0; font-weight: 500; color: #667eea; text-decoration: underline;">{{ attachment.file.name|truncatechars:40 }}</p>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #5f6368;">
+                                Size: {% widthratio attachment.file.size 1048576 1 %}MB
+                            </p>
+                        </div>
+                        <button type="button" onclick="window.open('{{ attachment.file.url }}', '_blank')"
+                            style="padding: 6px 16px; background-color: #667eea; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-left: auto;">
+                            <span class="material-icons" style="font-size: 16px;">preview</span>
+                            Preview
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Legacy Attachment Section (for backward compatibility) -->
+            {% if transmittal.file %}
+            <div class="attachment-section"
+                style="margin-bottom: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; border-left: 4px solid #667eea; line-height: 1.0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <p style="margin: 0; font-weight: 700; color: #667eea;">
+                        <span class="material-icons"
+                            style="font-size: 18px; vertical-align: middle; margin-right: 6px;">attach_file</span>
+                        Attachment (Legacy)
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="material-icons" style="color: #667eea;">file_present</span>
+                    <div style="flex: 1;">
+                        <p style="margin: 0; font-weight: 500; color: #667eea; text-decoration: underline;">{{ transmittal.file.name }}</p>
+                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #5f6368;">
+                            Size: {% widthratio transmittal.file.size 1048576 1 %}MB
+                        </p>
+                    </div>
+                    <button type="button" onclick="window.open('{{ transmittal.file.url }}', '_blank')"
+                        style="padding: 6px 16px; background-color: #667eea; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-left: auto;">
+                        <span class="material-icons" style="font-size: 16px;">preview</span>
+                        Preview
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Signature Section -->
+            <div style="margin-top: 30px; display: flex; justify-content: space-between; line-height: 1.0;">
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: flex-end; gap: 0;">
+                        <p style="margin: 5px 0 0 0; font-weight: 700; display: inline;">Received by:</p>
+                        {% if transmittal.status == 'received' %}
+                        {% if transmittal.receiver_signature %}
+                        <div
+                            style="height: 60px; width: 120px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-left: 4px; align-self: flex-start;">
+                            <img src="{{ transmittal.receiver_signature.url }}" alt="Signature"
+                                style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        {% elif transmittal.received_by.profile.digital_signature %}
+                        <div
+                            style="height: 60px; width: 120px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-left: 4px; align-self: flex-start;">
+                            <img src="{{ transmittal.received_by.profile.digital_signature.url }}" alt="Signature"
+                                style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                    <br>
+                    <br>
+                    <p style="margin: 5px 0 0 0; font-weight: 700; display: inline; margin-right: 30px;">Date:</p>
+                    {% if transmittal.received_at %}
+                    <p style="margin: 5px 0 0 0; color: #333; display: inline; margin-right: 30px;">{{ transmittal.received_at|date:"M d, Y" }}</p>
+                    {% else %}
+                    <p style="margin: 5px 0 0 0; font-weight: 700; display: inline; margin-right: 30px;"></p>
+                    {% endif %}
+                    <br>
+                    <p style="margin: 5px 0 0 0; font-weight: 700; display: inline; margin-right: 30px;">Time:</p>
+                    {% if transmittal.received_at %}
+                    <p style="margin: 5px 0 0 0; color: #333; display: inline;">{{ transmittal.received_at|time:"g:i A" }}</p>
+                    {% else %}
+                    <p style="margin: 3px 0 0 0; font-weight: 700;"></p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Status Actions -->
+            <div style="padding-top: 20px; margin-top: 30px;">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <!-- Custodian: Mark as Arrived -->
+                    {% if can_mark_arrived %}
+                    <form action="{% url 'transmittals:mark_arrived' transmittal.pk %}" method="get"
+                        style="display: inline;">
+                        <button type="submit" class="btn btn-primary"
+                            style="background-color: #17A2B8; border-color: #17A2B8;">
+                            <span class="material-icons" style="font-size: 16px; margin-right: 4px;">place</span> Mark
+                            as Arrived
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Sender: Cancel Transmittal (only if In Transit) -->
+                    {% if can_cancel %}
+                    <form action="{% url 'transmittals:cancel_transmittal' transmittal.pk %}" method="post"
+                        style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger"
+                            style="background-color: #DC3545; border-color: #DC3545;"
+                            onclick="return confirm('Are you sure you want to cancel this transmittal? This action cannot be undone.');">
+                            <span class="material-icons" style="font-size: 16px; margin-right: 4px;">cancel</span>
+                            Cancel Transmittal
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Custodian: Pick Transmittal -->
+                    {% if can_mark_pick %}
+                    <form action="{% url 'transmittals:mark_pick' transmittal.pk %}" method="get"
+                        style="display: inline;">
+                        <button type="submit" class="btn btn-primary"
+                            style="background-color: #6f42c1; border-color: #6f42c1;">
+                            <span class="material-icons" style="font-size: 16px; margin-right: 4px;">back_hand</span>
+                            Pick
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Receiver: Mark as Received -->
+                    {% if can_mark_received %}
+                    <form action="{% url 'transmittals:mark_received' transmittal.pk %}" method="get"
+                        style="display: inline;">
+                        <button type="submit" class="btn btn-success"
+                            style="background-color: #28A745; border-color: #28A745; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer;">
+                            <span class="material-icons" style="font-size: 16px; margin-right: 4px;">check_circle</span>
+                            Mark as Received
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Receiver: Reverse Transmittal (only when received) -->
+                    {% if can_reverse and transmittal.status == 'received' %}
+                    <a href="{% url 'transmittals:create_transmittal' %}?reverse_from={{ transmittal.pk }}"
+                        style="display: inline-block; background-color: #FFC107; border-color: #FFC107; color: #000; border: none; padding: 8px 16px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none;">
+                        <span class="material-icons"
+                            style="font-size: 16px; margin-right: 4px; vertical-align: middle;">swap_vert</span>
+                        <span style="vertical-align: middle;">Return</span>
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- Status Information -->
+                <div
+                    style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-radius: 4px; font-size: 13px; color: #000;">
+                    {% if transmittal.status == 'in_transit' %}
+                    <strong style="color: #000;">Status: IN TRANSIT</strong>
+                    {% elif transmittal.status == 'arrived' %}
+                    <span id="arrived-status"></span>
+                    <script>var a_by = "{{ transmittal.arrived_by.get_full_name }}"; var a_at = "{{ arrived_at_formatted }}"; document.getElementById('arrived-status').innerHTML = '<strong style="color: #000;">Status: ARRIVED</strong> - Delivered to {{ transmittal.destination_location.name }}<br><em>Marked arrived by ' + a_by + ' on ' + a_at + '</em>';</script>
+                    {% elif transmittal.status == 'picked' %}
+                    <span id="picked-status"></span>
+                    <script>var p_at = "{{ picked_at_formatted }}"; document.getElementById('picked-status').innerHTML = '<strong style="color: #6f42c1;">Status: PICKED</strong> - <span class="material-icons" style="font-size:16px;vertical-align:text-bottom;color:#6f42c1">back_hand</span> Picked up at the custodian facility<br><em>Picked on ' + p_at + '</em>';</script>
+                    {% elif transmittal.status == 'received' %}
+                    <span id="received-status"></span>
+                    <script>var r_by = "{{ transmittal.received_by.get_full_name }}"; var r_at = "{{ received_at_formatted }}"; document.getElementById('received-status').innerHTML = '<strong>Status: RECEIVED</strong> - <span class="material-icons" style="font-size:16px;vertical-align:text-bottom;color:#28a745">check_circle</span> Complete<br><em>Received by ' + r_by + ' on ' + r_at + '</em>';</script>
+                    {% elif transmittal.status == 'cancelled' %}
+                    <strong style="color: #000;">Status: CANCELLED</strong> - <span class="material-icons"
+                        style="font-size: 16px; vertical-align: text-bottom; color: #dc3545;">cancel</span> This
+                    transmittal has been cancelled
+                    {% endif %}
+                </div>
+
+                <!-- Cancellation Reason Display -->
+                {% if transmittal.status == 'cancelled' and transmittal.cancellation_reason %}
+                <div
+                    style="margin-top: 12px; padding: 12px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #dc3545; font-size: 13px; color: #000;">
+                    <strong style="color: #dc3545;">
+                        <span class="material-icons"
+                            style="font-size: 16px; vertical-align: text-bottom; margin-right: 4px;">info</span>
+                        Cancellation Reason:
+                    </strong>
+                    <p style="margin: 8px 0 0 0; white-space: pre-wrap;">{{ transmittal.cancellation_reason }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Driver Information Display -->
+                {% if transmittal.driver_remarks %}
+                <div
+                    style="margin-top: 12px; padding: 12px; background: #e7f3ff; border-radius: 4px; border-left: 4px solid #0066cc; font-size: 13px; color: #000;">
+                    <strong style="color: #0066cc;">
+                        <span class="material-icons"
+                            style="font-size: 16px; vertical-align: text-bottom; margin-right: 4px;">local_shipping</span>
+                        Driver Information:
+                    </strong>
+                    <p style="margin: 8px 0 0 0; white-space: pre-wrap;">{{ transmittal.driver_remarks }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Pick Remarks Display -->
+                {% if transmittal.pick_remarks %}
+                <div
+                    style="margin-top: 12px; padding: 12px; background: #f8f0ff; border-radius: 4px; border-left: 4px solid #6f42c1; font-size: 13px; color: #000;">
+                    <strong style="color: #6f42c1;">
+                        <span class="material-icons"
+                            style="font-size: 16px; vertical-align: text-bottom; margin-right: 4px;">back_hand</span>
+                        Pick Remarks:
+                    </strong>
+                    
+                    <p style="font-style: italic; font-size:14px; vertical-align:text-bottom; color:#6f42c;">{{ transmittal.pick_remarks }}  </br> {% if transmittal.pick_remarks and transmittal.status == 'received' %} Picked at {{ transmittal.picked_at }} </p> {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    @media print {
+
+        /* Hide browser page URL footer */
+        @page {
+            margin: 0;
+        }
+
+        /* Remove print margins and footers */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Reset and Hide UI Elements */
+        body * {
+            visibility: hidden;
+        }
+
+        .gmail-header,
+        .gmail-sidebar,
+        .card-footer,
+        .gmail-btn,
+        button,
+        form,
+        .status-badge,
+        .detail-actions {
+            display: none !important;
+        }
+
+        /* Main Content Container - Bring to top and show */
+        .detail-container {
+            visibility: visible;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: white;
+            z-index: 9999;
+        }
+
+        /* Ensure all children of the container are visible and flow normally */
+        .detail-container * {
+            visibility: visible;
+            position: static;
+            /* Prevent children from collapsing to 0,0 */
+            box-shadow: none !important;
+        }
+
+        /* Hide specific non-print inner elements if any remain */
+        .detail-actions,
+        .btn {
+            display: none !important;
+        }
+
+        /* Typography & Layout for Print */
+        body {
+            background: white;
+            color: black;
+            font-family: 'Times New Roman', Times, serif;
+            /* Formal Document Font */
+            font-size: 12pt;
+            line-height: 1.5;
+        }
+
+        /* Header Section */
+        .detail-header {
+            visibility: visible;
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .detail-title {
+            font-size: 24pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 0;
+            color: black;
+        }
+
+        .detail-meta {
+            font-size: 10pt;
+            color: #333;
+            margin-top: 5px;
+        }
+
+        /* Info Tables */
+        .email-info-table {
+            visibility: visible;
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .email-info-table td {
+            padding: 4px 8px;
+            border: none;
+            /* Minimal look */
+        }
+
+        .email-info-table td:first-child {
+            font-weight: bold;
+            width: 150px;
+        }
+
+        /* Sections */
+        .email-section {
+            visibility: visible;
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+
+        .email-section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            border-bottom: 1px solid black;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            color: black;
+            background: none;
+            /* Remove colorful backgrounds */
+        }
+
+        /* Description Box */
+        .email-description-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            min-height: 100px;
+            background: white;
+            color: black;
+            font-family: inherit;
+        }
+
+        /* Signature Space */
+        .print-signature {
+            visibility: visible;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+        }
+
+        .signature-block {
+            text-align: center;
+            width: 40%;
+        }
+
+        .signature-line {
+            border-top: 1px solid black;
+            margin-top: 40px;
+            padding-top: 5px;
+        }
+
+        /* Signature Space - Force Display on Print */
+        .print-footer {
+            display: block !important;
+            /* Override inline display:none */
+            visibility: visible;
+            position: relative;
+            /* Position relative to flow */
+        }
+    }
+</style>
+
+<!-- Signature Block (Visible only in print via CSS above if moved inside visibility scope, but simplified here) -->
+<div class="print-footer" style="display: none;">
+    <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+        <div style="width: 40%;">
+            <p><strong>Prepared By:</strong></p>
+            <div style="border-bottom: 1px solid black; height: 40px; margin-top: 20px;"></div>
+            <p style="margin-top: 5px;">{{ transmittal.sender.profile.get_full_name }}</p>
+        </div>
+        <div style="width: 40%;">
+            <p><strong>Received By:</strong></p>
+            <div style="border-bottom: 1px solid black; height: 40px; margin-top: 20px;"></div>
+            <p style="margin-top: 5px;">{{ transmittal.recipient_name }}</p>
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: 40px; font-size: 10pt; color: #555;">
+        Generated by Email Transmittal System on {% now "F j, Y" %}
+    </div>
+</div>
+
+<!-- Print Trigger Script -->
+<script>
+    // Check for autoprint query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('autoprint') && urlParams.get('autoprint') === 'true') {
+        // Give the page time to fully load before printing
+        window.addEventListener('load', function () {
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        });
+    }
+</script>
+{% endblock %}

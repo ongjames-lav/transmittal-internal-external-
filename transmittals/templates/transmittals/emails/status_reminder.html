@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 650px; margin: 20px auto; background-color: #fff; border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .header p { margin: 8px 0 0 0; font-size: 14px; opacity: 0.95; }
+        .badge { display: inline-block; padding: 6px 16px; background-color: #FFC107; color: #000; border-radius: 15px; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .content { padding: 30px; }
+        .alert-box { background: #fff3cd; border: 1px solid #ffc107; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin-bottom: 20px; color: #333; }
+        .alert-box strong { color: #667eea; }
+        .section { margin-bottom: 25px; }
+        .section-title { font-size: 14px; font-weight: 700; color: #667eea; margin-bottom: 12px; border-bottom: 2px solid #667eea; padding-bottom: 8px; text-transform: uppercase; }
+        .info-table { width: 100%; border-collapse: collapse; }
+        .info-table tr { border-bottom: 1px solid #e0e0e0; }
+        .info-table td { padding: 10px 0; vertical-align: top; }
+        .info-table td:first-child { font-weight: 600; color: #555; width: 140px; }
+        .info-table tr:last-child { border-bottom: none; }
+        .two-column { border: 1px solid #333; border-radius: 4px; margin-bottom: 15px; display: flex; overflow: hidden; }
+        .column { flex: 1; padding: 12px; }
+        .column-left { border-right: 1px solid #333; }
+        .description-box { background: #f8f9fa; padding: 15px; border-left: 4px solid #667eea; border-radius: 3px; line-height: 1.6; }
+        .cta-button { display: inline-block; padding: 14px 32px; background-color: #667eea; color: white; text-decoration: none; border-radius: 5px; font-weight: 600; font-size: 14px; margin: 20px 0; text-align: center; }
+        .cta-button:hover { opacity: 0.9; }
+        .button-container { text-align: center; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #e0e0e0; }
+        .footer p { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⏰ Transmittal Status Reminder</h1>
+            <p>Reference: {{ transmittal.reference_number }}</p>
+            <p style="margin: 10px 0 0 0;"><span class="badge">{{ status_display }}</span></p>
+        </div>
+
+        <div class="content">
+            <!-- Alert Box -->
+            <div class="alert-box">
+                <p><strong>Action Required:</strong> Your transmittal <strong>{{ transmittal.reference_number }}</strong> has been in <strong>{{ status_display }}</strong> status for <strong>{{ days_in_status }} days</strong>.</p>
+                <p style="margin: 10px 0 0 0;">Please review and take appropriate action to move this transmittal to the next status.</p>
+            </div>
+
+            <!-- Two-Column Layout -->
+            <div class="two-column">
+                <!-- Left Column: From/Sender -->
+                <div class="column column-left">
+                    <div class="section-title">From (Origin)</div>
+                    <table class="info-table">
+                        <tr>
+                            <td>Location:</td>
+                            <td><strong>{{ transmittal.origin_location.name }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Sender:</td>
+                            <td>{{ transmittal.sender.get_full_name|default:transmittal.sender.username }}</td>
+                        </tr>
+                        <tr>
+                            <td>Department:</td>
+                            <td>{{ transmittal.sender_department|default:'-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <!-- Right Column: To/Recipient -->
+                <div class="column">
+                    <div class="section-title">To (Destination)</div>
+                    <table class="info-table">
+                        <tr>
+                            <td>Location:</td>
+                            <td><strong>{{ transmittal.destination_location.name }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Recipient:</td>
+                            <td>{{ transmittal.recipient_name }}</td>
+                        </tr>
+                        <tr>
+                            <td>Department:</td>
+                            <td>{{ transmittal.recipient_department }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Status Information -->
+            <div class="section">
+                <div class="section-title">Current Status</div>
+                <table class="info-table">
+                    <tr>
+                        <td>Reference Number:</td>
+                        <td><strong>{{ transmittal.reference_number }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Status:</td>
+                        <td><strong>{{ status_display }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Days in Status:</td>
+                        <td><strong>{{ days_in_status }} days</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Status Changed:</td>
+                        <td>{{ transmittal.status_changed_at|date:"F j, Y \\a\\t g:i A" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Original Date:</td>
+                        <td>{{ transmittal.sent_at|date:"F j, Y \\a\\t g:i A" }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Description -->
+            {% if transmittal.description %}
+            <div class="section">
+                <div class="section-title">Description</div>
+                <div class="description-box">{{ transmittal.description }}</div>
+            </div>
+            {% endif %}
+
+            <!-- Call to Action -->
+            <div class="button-container">
+                <a href="{{ site_url }}/transmittals/detail/{{ transmittal.pk }}/" class="cta-button">📋 View Transmittal Details</a>
+            </div>
+
+            <!-- Action Instructions -->
+            <div class="section">
+                <div class="section-title">Next Steps</div>
+                <div class="description-box">
+                    <p style="margin-top: 0;">Based on the current status:</p>
+                    {% if transmittal.status == 'in_transit' %}
+                    <ul>
+                        <li>The transmittal is currently <strong>In Transit</strong></li>
+                        <li>Once the items arrive at the destination, mark it as <strong>Arrived</strong></li>
+                        <li>The receiver will then pick up the items and mark as <strong>Picked</strong></li>
+                        <li>Finally, the receiver will confirm as <strong>Received</strong></li>
+                    </ul>
+                    {% elif transmittal.status == 'arrived' %}
+                    <ul>
+                        <li>The transmittal has <strong>Arrived</strong> at the destination</li>
+                        <li>The receiver should now <strong>Pick up</strong> the items</li>
+                        <li>Confirm once items are received by clicking <strong>Mark as Received</strong></li>
+                    </ul>
+                    {% elif transmittal.status == 'picked' %}
+                    <ul>
+                        <li>The transmittal has been <strong>Picked up</strong></li>
+                        <li>The receiver should confirm final receipt by clicking <strong>Mark as Received</strong></li>
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>This is an automated notification from the CDC MFG CORP Transmittal System.</strong></p>
+            <p>Reference: <strong>{{ transmittal.reference_number }}</strong></p>
+            <p>Please do not reply to this email. If you have questions, contact the transmittal administrator.</p>
+        </div>
+    </div>
+</body>
+</html>

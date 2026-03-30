@@ -1,0 +1,337 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Import Users from Excel - Admin{% endblock %}
+
+{% block extrahead %}
+<style>
+    .import-container {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+    
+    .instruction-box {
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+    
+    .template-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        background-color: white;
+    }
+    
+    .template-table th {
+        background-color: #f5f5f5;
+        padding: 12px;
+        border: 1px solid #ddd;
+        text-align: left;
+        font-weight: bold;
+    }
+    
+    .template-table td {
+        padding: 12px;
+        border: 1px solid #ddd;
+    }
+    
+    .required {
+        color: #d32f2f;
+        font-weight: bold;
+    }
+    
+    .optional {
+        color: #f57c00;
+        font-weight: bold;
+    }
+    
+    .upload-area {
+        background-color: #f9f9f9;
+        border: 2px dashed #2196f3;
+        padding: 30px;
+        text-align: center;
+        border-radius: 4px;
+        margin: 20px 0;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .upload-area:hover {
+        background-color: #f0f7ff;
+        border-color: #0066cc;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .info-card {
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-radius: 4px;
+        border-left: 4px solid #2196f3;
+    }
+    
+    .info-card h4 {
+        margin-top: 0;
+        color: #0066cc;
+    }
+    
+    .info-card ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+    
+    .info-card li {
+        margin: 5px 0;
+        font-size: 13px;
+    }
+    
+    .submit-btn {
+        background-color: #4caf50;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    .submit-btn:hover {
+        background-color: #45a049;
+    }
+    
+    .back-btn {
+        background-color: #9e9e9e;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 10px;
+    }
+    
+    .back-btn:hover {
+        background-color: #757575;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="import-container">
+        <h1>👥 Import Users from Excel</h1>
+        
+        {% if messages %}
+            <div id="messages">
+                {% for message in messages %}
+                    <div style="padding: 12px; margin-bottom: 10px; border-radius: 4px; {% if 'error' in message.tags %}background-color: #ffebee; border-left: 4px solid #d32f2f; color: #c62828;{% elif 'warning' in message.tags %}background-color: #fff3cd; border-left: 4px solid #ff9800; color: #ff6f00;{% elif 'success' in message.tags %}background-color: #e8f5e9; border-left: 4px solid #4caf50; color: #2e7d32;{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Instructions -->
+        <div class="instruction-box">
+            <h3 style="margin-top: 0;">📋 How to Use</h3>
+            <ol>
+                <li>Prepare your Excel file with the columns listed below</li>
+                <li>Make sure all <span class="required">Required</span> fields are filled</li>
+                <li>Upload the file using the form below</li>
+                <li>Review any errors or warnings</li>
+                <li>Successfully imported records will be added to the database</li>
+            </ol>
+        </div>
+        
+        <!-- Required Data Table -->
+        <h3>📑 Excel File Format</h3>
+        <table class="template-table">
+            <thead>
+                <tr>
+                    <th style="width: 180px;">Column Name</th>
+                    <th style="width: 80px;">Required</th>
+                    <th style="width: 180px;">Example</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Username</strong></td>
+                    <td><span class="required">YES</span></td>
+                    <td>john.doe</td>
+                    <td>Must be unique. Alphanumeric and underscores only.</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td><strong>Email</strong></td>
+                    <td><span class="required">YES</span></td>
+                    <td>john@cdc.com</td>
+                    <td>Must be unique and valid email format</td>
+                </tr>
+                <tr>
+                    <td><strong>First Name</strong></td>
+                    <td><span class="optional">NO</span></td>
+                    <td>John</td>
+                    <td>User's first name</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td><strong>Last Name</strong></td>
+                    <td><span class="optional">NO</span></td>
+                    <td>Doe</td>
+                    <td>User's last name</td>
+                </tr>
+                <tr>
+                    <td><strong>Password</strong></td>
+                    <td><span class="required">YES</span></td>
+                    <td>SecurePass123</td>
+                    <td>Minimum 8 characters. Will be securely hashed.</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td><strong>Contact</strong></td>
+                    <td><span class="optional">NO</span></td>
+                    <td>09123456789</td>
+                    <td>Phone number (must contain digits)</td>
+                </tr>
+                <tr>
+                    <td><strong>Company</strong></td>
+                    <td><span class="optional">NO</span></td>
+                    <td>CDC</td>
+                    <td>Company or organization name</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td><strong>Department</strong></td>
+                    <td><span class="optional">NO</span></td>
+                    <td>MIS</td>
+                    <td>Must match active department in system</td>
+                </tr>
+                <tr>
+                    <td><strong>Assigned Location</strong></td>
+                    <td><span class="optional">NO</span></td>
+                    <td>Araneta</td>
+                    <td>Must match existing location name</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td><strong>Address</strong></td>
+                    <td><span class="optional">NO</span></td>
+                    <td>123 Street, City</td>
+                    <td>Full address</td>
+                </tr>
+                <tr>
+                    <td><strong>Role</strong></td>
+                    <td><span class="optional">NO</span></td>
+                    <td>user</td>
+                    <td>Options: user, custodian, admin. Defaults to "user"</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td><strong>Status</strong></td>
+                    <td><span class="optional">NO</span></td>
+                    <td>pending</td>
+                    <td>Options: pending, approved, rejected. Defaults to "pending"</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Available Data -->
+        <div class="info-grid">
+            <div class="info-card">
+                <h4>🏢 Available Departments ({{ available_departments|length }})</h4>
+                <ul>
+                    {% for dept in available_departments|slice:":10" %}
+                        <li>{{ dept.name }}</li>
+                    {% endfor %}
+                    {% if available_departments|length > 10 %}
+                        <li><strong>... and {{ available_departments|length|add:"-10" }} more</strong></li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <div class="info-card">
+                <h4>📍 Available Locations ({{ available_locations|length }})</h4>
+                <ul>
+                    {% for location in available_locations|slice:":10" %}
+                        <li>{{ location.name }}</li>
+                    {% endfor %}
+                    {% if available_locations|length > 10 %}
+                        <li><strong>... and {{ available_locations|length|add:"-10" }} more</strong></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Upload Form -->
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="upload-area" onclick="document.getElementById('excel_file').click();">
+                <div style="font-size: 48px; margin-bottom: 10px;">📁</div>
+                <p style="margin: 5px 0; font-weight: bold;">Click to select Excel file or drag & drop</p>
+                <p style="margin: 5px 0; color: #666; font-size: 13px;">Supported formats: .xlsx, .xls (Max 5MB)</p>
+                <input type="file" id="excel_file" name="excel_file" accept=".xlsx,.xls" style="display: none;" required>
+                <span id="file_name" style="display: none; margin-top: 10px; color: #2196f3; font-weight: bold;"></span>
+            </div>
+            
+            <script>
+                const uploadArea = document.querySelector('.upload-area');
+                const fileInput = document.getElementById('excel_file');
+                const fileName = document.getElementById('file_name');
+                
+                fileInput.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        fileName.textContent = '✓ ' + this.files[0].name;
+                        fileName.style.display = 'block';
+                    }
+                });
+                
+                uploadArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#0066cc';
+                    this.style.backgroundColor = '#f0f7ff';
+                });
+                
+                uploadArea.addEventListener('dragleave', function(e) {
+                    this.style.borderColor = '#2196f3';
+                    this.style.backgroundColor = '#f9f9f9';
+                });
+                
+                uploadArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    if (e.dataTransfer.files.length > 0) {
+                        fileInput.files = e.dataTransfer.files;
+                        fileName.textContent = '✓ ' + e.dataTransfer.files[0].name;
+                        fileName.style.display = 'block';
+                    }
+                });
+            </script>
+            
+            <div style="margin-top: 20px;">
+                <button type="submit" class="submit-btn">📤 Upload & Import</button>
+                <a href="{% url 'admin:auth_user_changelist' %}" class="back-btn">← Back to Users</a>
+            </div>
+        </form>
+        
+        <!-- Important Notes -->
+        <div style="background-color: #fff3cd; border-left: 4px solid #ff9800; padding: 15px; margin-top: 20px; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #ff6f00;">⚠️ Important Notes</h3>
+            <ul style="margin: 5px 0; padding-left: 20px;">
+                <li><strong>Usernames and Emails:</strong> Must be unique. Duplicates will be rejected</li>
+                <li><strong>Password Security:</strong> Passwords must be at least 8 characters and will be securely hashed</li>
+                <li><strong>Data Validation:</strong> All data is validated before import. Invalid rows will be skipped with error details</li>
+                <li><strong>Profile Creation:</strong> A user profile is automatically created for each imported user</li>
+                <li><strong>Department & Location:</strong> Must match existing active departments and locations</li>
+                <li><strong>Role Assignment:</strong> Determines user permissions (user, custodian, admin)</li>
+                <li><strong>Status:</strong> New users default to "pending" and need approval</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

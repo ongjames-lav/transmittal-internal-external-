@@ -1,0 +1,34 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Registration Success{% endblock %}
+
+{% block content %}
+<div style="text-align: center;">
+    <h1>✓ Registration Successful!</h1>
+
+    <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 20px; 
+                margin: 20px 0; border-radius: 5px; color: #155724;">
+        <h2 style="color: #155724; margin-top: 0;">Welcome!</h2>
+        <p>Thank you for registering. An email confirmation has been sent to your email address.</p>
+    </div>
+
+    <div style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 20px; 
+                margin: 20px 0; border-radius: 5px; color: #0066cc;">
+        <h3 style="color: #0066cc; margin-top: 0;">What Happens Next?</h3>
+        <ol style="text-align: left; display: inline-block;">
+            <li>An administrator will review your registration details</li>
+            <li>You will receive an approval or rejection email</li>
+            <li>If approved, you can log in with your credentials</li>
+        </ol>
+    </div>
+
+    <p style="color: #666; margin-top: 20px;">
+        This process typically takes 24-48 hours. Please check your email and spam folder for updates.
+    </p>
+
+    <a href="{% url 'accounts:login' %}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                      color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-top: 20px;">
+        Go to Login
+    </a>
+</div>
+{% endblock %}

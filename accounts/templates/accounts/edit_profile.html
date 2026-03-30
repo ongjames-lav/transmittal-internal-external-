@@ -1,0 +1,145 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<style>
+    /* Styles copied from accounts/base.html to match Login UI */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="file"],
+    textarea,
+    select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.3s ease;
+        background-color: white;
+        /* Ensure background is white */
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="file"]:focus,
+    textarea:focus,
+    select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    input[disabled],
+    textarea[disabled],
+    select[disabled] {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+        opacity: 0.7;
+        color: #666;
+    }
+
+    .form-group-custom {
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="detail-container">
+    <div class="detail-header">
+        <h1 class="detail-title">Edit Profile</h1>
+        <div class="detail-meta">Update your personal and contact information</div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="detail-body">
+        {% csrf_token %}
+
+        {% if user.profile.avatar %}
+        <div style="margin-bottom: 24px; text-align: center;">
+            <img src="{{ user.profile.avatar.url }}" alt="Current Avatar"
+                style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #dadce0;">
+            <p style="font-size: 13px; color: #5f6368; margin-top: 8px;">Current Profile Picture</p>
+        </div>
+        {% endif %}
+
+        {% if user.profile.digital_signature %}
+        <div style="margin-bottom: 24px; text-align: center; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+            <p style="font-size: 13px; color: #5f6368; margin-bottom: 8px; font-weight: 500;">Current Digital Signature
+            </p>
+            <img src="{{ user.profile.digital_signature.url }}" alt="Current Signature"
+                style="max-width: 200px; max-height: 100px; object-fit: contain; border: 1px solid #dadce0; border-radius: 4px; padding: 8px; background: white;">
+        </div>
+        {% endif %}
+
+        {% if form.non_field_errors %}
+        <div style="background: #fce8e6; color: #c5221f; padding: 12px; border-radius: 4px; margin-bottom: 20px;">
+            {% for error in form.non_field_errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% for field in form %}
+        {% if field.is_hidden %}
+        {{ field }}
+        {% else %}
+        <div class="form-group-custom">
+            <label for="{{ field.id_for_label }}"
+                style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">
+                {{ field.label }}
+                {% if field.field.required and field.name != 'assigned_location' %}
+                <span style="color: #dc3545;">*</span>
+                {% endif %}
+            </label>
+
+            {{ field }}
+
+            {% if field.errors %}
+            <div style="color: #c5221f; font-size: 12px; margin-top: 4px;">
+                {% for error in field.errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if field.help_text %}
+            <div style="color: #5f6368; font-size: 12px; margin-top: 4px; font-style: italic;">
+                {{ field.help_text|safe }}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if field.name == 'contact' %}
+        <!-- Department Display (read-only, always fresh from database) -->
+        <div class="form-group-custom">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">
+                Department
+            </label>
+            <div id="department-display"
+                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; background-color: #f5f5f5; color: #333; cursor: not-allowed;">
+            </div>
+            <script>document.getElementById('department-display').textContent = "{{ current_department }}";</script>
+            <div style="color: #5f6368; font-size: 12px; margin-top: 4px; font-style: italic;">
+                Your current department (managed by admin)
+            </div>
+        </div>
+        {% endif %}
+
+        {% endif %}
+        {% endfor %}
+
+        <div style="margin-top: 32px; display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary" style="background: #1a73e8; color: white;">Save
+                Changes</button>
+            <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary" style="text-decoration: none;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+            color: #155724;
+        }
+        .footer {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to Transmittal System!</h1>
+        </div>
+        <div class="content">
+            <p>Hello {{ full_name }},</p>
+            
+            <div class="success-box">
+                <strong>Registration Successful!</strong>
+                <p>Thank you for registering with our Transmittal System.</p>
+            </div>
+            
+            <h2 style="color: #667eea;">What Happens Next?</h2>
+            <ol>
+                <li>An administrator will review your registration details</li>
+                <li>You will receive an email notification of approval or rejection</li>
+                <li>If approved, you can log in with your credentials:
+                    <ul>
+                        <li><strong>Username:</strong> {{ username }}</li>
+                    </ul>
+                </li>
+            </ol>
+            
+            <p><strong>Processing Time:</strong> Registrations are typically reviewed within 24-48 hours.</p>
+            
+            <p style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 15px; border-radius: 3px;">
+                <strong>Important:</strong> Please check your email (including spam/junk folder) regularly for the approval notification.
+            </p>
+            
+            <h2 style="color: #667eea;">Need Help?</h2>
+            <p>If you have any questions or concerns, please contact our support team at <strong>mis.team@melawares.com</strong></p>
+            
+            <div class="footer">
+                <p>This is an automated email. Please do not reply to this message.</p>
+                <p>&copy; 2025 Transmittal System. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

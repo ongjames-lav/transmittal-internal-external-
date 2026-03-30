@@ -1,0 +1,245 @@
+{% extends 'transmittals/external_base.html' %}
+{% load static %}
+
+{% block title %}Sent External Transmittals | Transmittal System{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Sent Specific Styling */
+    .sent-header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-gray);
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filter-input {
+        padding: 6px 12px;
+        border: 1px solid var(--border-gray);
+        border-radius: 4px;
+        font-size: 13px;
+        color: var(--gray-900);
+        outline: none;
+    }
+
+    .filter-input:focus {
+        border-color: var(--gmail-blue);
+    }
+
+    /* List Layout (Gmail-like) */
+    .transmittal-list {
+        list-style: none;
+    }
+
+    .transmittal-row {
+        display: grid;
+        grid-template-columns: 240px 1fr 140px 120px;
+        align-items: center;
+        padding: 0 16px;
+        height: 48px;
+        border-bottom: 1px solid var(--gray-200);
+        cursor: pointer;
+        transition: box-shadow 0.1s;
+        text-decoration: none;
+        color: var(--gray-900);
+    }
+
+    .transmittal-row:hover {
+        box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+        z-index: 1;
+    }
+
+    .transmittal-row.read {
+        background: rgba(242, 245, 245, 0.8);
+        font-weight: 400;
+    }
+
+    .col-recipient {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 16px;
+    }
+
+    .col-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow: hidden;
+    }
+
+    .col-description {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--gray-700);
+    }
+
+    .col-ref {
+        font-family: monospace;
+        font-size: 12px;
+        color: var(--gray-700);
+    }
+
+    .col-date {
+        text-align: right;
+        font-size: 12px;
+        color: var(--gray-700);
+    }
+
+    .type-badge-mini {
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .status-badge-mini {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .empty-state {
+        padding: 80px 20px;
+        text-align: center;
+    }
+
+    .empty-state-icon {
+        font-size: 64px;
+        color: var(--gray-200);
+        margin-bottom: 16px;
+    }
+
+    .empty-state-title {
+        font-size: 18px;
+        color: var(--gray-700);
+        margin-bottom: 8px;
+    }
+
+    @media (max-width: 900px) {
+        .transmittal-row {
+            grid-template-columns: 180px 1fr 100px;
+        }
+
+        .col-ref {
+            display: none;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .transmittal-row {
+            grid-template-columns: 120px 1fr;
+            height: auto;
+            padding: 12px 16px;
+        }
+
+        .col-date {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sent-header-actions">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <h1 style="font-size:18px; font-weight:400;">Sent</h1>
+        <span style="color:var(--gray-700); font-size:13px;">({{ transmittals.count }})</span>
+    </div>
+
+    <form method="get" class="filter-bar">
+        <input type="email" name="email" value="{{ user_email }}" placeholder="Filter by sender email"
+            class="filter-input" style="width:240px;">
+        <select name="status" class="filter-input">
+            <option value="">All Status</option>
+            <option value="in_transit" {% if status_filter == 'in_transit' %}selected{% endif %}>In Transit</option>
+            <option value="received" {% if status_filter == 'received' %}selected{% endif %}>Received</option>
+            <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
+            <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+        </select>
+        <select name="main_type" class="filter-input">
+            <option value="">All Types</option>
+            <option value="for_keep" {% if main_type_filter == 'for_keep' %}selected{% endif %}>For Keep</option>
+            <option value="for_return" {% if main_type_filter == 'for_return' %}selected{% endif %}>For Return</option>
+        </select>
+        <button type="submit" class="btn btn-secondary" style="padding:4px 12px; height:32px;">
+            <span class="material-icons" style="font-size:18px;">search</span>
+        </button>
+    </form>
+</div>
+
+<div class="transmittal-list">
+    {% if transmittals %}
+    {% for transmittal in transmittals %}
+    <a href="{% url 'transmittals:external_detail' transmittal.pk %}" class="transmittal-row read">
+        <div class="col-recipient" title="{{ transmittal.recipient_email }}">
+            To: {{ transmittal.recipient_name|default:transmittal.recipient_email|truncatechars:25 }}
+        </div>
+        <div class="col-content">
+            {% if transmittal.main_type == 'for_keep' %}
+            <span class="type-badge-mini badge-keep">Keep</span>
+            {% else %}
+            <span class="type-badge-mini badge-return">Return</span>
+            {% endif %}
+
+            <span class="col-description">
+                {{ transmittal.description }}
+            </span>
+
+            {% if transmittal.status == 'in_transit' %}
+            <span class="status-badge-mini badge-transit">
+                <span class="material-icons" style="font-size:14px;">local_shipping</span>
+            </span>
+            {% elif transmittal.status == 'received' %}
+            <span class="status-badge-mini badge-received">
+                <span class="material-icons" style="font-size:14px;">check_circle</span>
+            </span>
+            {% elif transmittal.status == 'open' %}
+            <span class="status-badge-mini badge-open">
+                <span class="material-icons" style="font-size:14px;">schedule</span>
+            </span>
+            {% elif transmittal.status == 'closed' %}
+            <span class="status-badge-mini badge-closed">
+                <span class="material-icons" style="font-size:14px;">task_alt</span>
+            </span>
+            {% endif %}
+        </div>
+        <div class="col-ref">
+            {{ transmittal.reference_number }}
+        </div>
+        <div class="col-date">
+            {{ transmittal.created_at|date:"M d" }}
+        </div>
+    </a>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <span class="material-icons empty-state-icon">send</span>
+        <div class="empty-state-title">No sent transmittals</div>
+        <p style="color:var(--gray-700); font-size:14px;">
+            {% if user_email %}
+            You haven't sent any transmittals from <strong>{{ user_email }}</strong>.
+            {% else %}
+            Enter your sender email above to search for sent transmittals.
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

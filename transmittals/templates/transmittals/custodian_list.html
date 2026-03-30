@@ -1,0 +1,833 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}{% if status_filter == 'in_transit' %}In Transit{% elif status_filter == 'arrived' %}Arrived{% elif status_filter == 'picked' %}Picked{% else %}Received{% endif %}{% endblock %}
+
+{% block content %}
+<div style="background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <!-- Header -->
+    <div
+        style="padding: 24px; border-bottom: 1px solid #dadce0; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;">
+        <div style="flex: 1;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 500;">
+                <span id="list-status-title"></span>
+            </h1>
+            <script>
+                (function () {
+                    var title = "{% if status_filter == 'in_transit' %} In Transit{% elif status_filter == 'arrived' %} Arrived{% elif status_filter == 'picked' %} Picked{% elif status_filter == 'received' %} Received{% else %}Outgoing{% endif %}";
+                    document.getElementById('list-status-title').textContent = title;
+                })();
+            </script>
+
+            <!-- Status Filter Buttons - Only for Outgoing -->
+            {% if status_filter == 'outgoing' %}
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button class="status-btn {% if not status_filter_param %}active{% endif %}"
+                    onclick="handleStatusFilter('')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if not status_filter_param %}#1a73e8{% else %}white{% endif %}; color: {% if not status_filter_param %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    ALL
+                </button>
+                <button class="status-btn {% if status_filter_param == 'in_transit' %}active{% endif %}"
+                    onclick="handleStatusFilter('in_transit')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if status_filter_param == 'in_transit' %}#1a73e8{% else %}white{% endif %}; color: {% if status_filter_param == 'in_transit' %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    IN TRANSIT
+                </button>
+                <button class="status-btn {% if status_filter_param == 'arrived' %}active{% endif %}"
+                    onclick="handleStatusFilter('arrived')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if status_filter_param == 'arrived' %}#1a73e8{% else %}white{% endif %}; color: {% if status_filter_param == 'arrived' %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    ARRIVED
+                </button>
+                <button class="status-btn {% if status_filter_param == 'picked' %}active{% endif %}"
+                    onclick="handleStatusFilter('picked')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if status_filter_param == 'picked' %}#1a73e8{% else %}white{% endif %}; color: {% if status_filter_param == 'picked' %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    PICKED
+                </button>
+                <button class="status-btn {% if status_filter_param == 'received' %}active{% endif %}"
+                    onclick="handleStatusFilter('received')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if status_filter_param == 'received' %}#1a73e8{% else %}white{% endif %}; color: {% if status_filter_param == 'received' %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    RECEIVED
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Pick Destination Dropdown and Update Driver Button - Only for Outgoing -->
+        <div style="display: flex; gap: 12px; align-items: center; flex-shrink: 0;">
+            {% if status_filter == 'outgoing' %}
+            <!-- Pick Destination Dropdown -->
+            <select id="filterSelect" onchange="handleFilter(this.value)"
+                style="background-color: white; color: #202124; border: 1px solid #dadce0; padding: 10px 12px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer; width: 220px;">
+                <option value="">Pick Destination</option>
+                {% if all_destination_locations %}
+                {% for location in all_destination_locations %}
+                <option value="{{ location.id }}" {% if filter_id|stringformat:"s" == location.id|stringformat:"s" %}selected{% endif %}>{{ location.name }}</option>
+                {% empty %}
+                <option disabled>No locations available</option>
+                {% endfor %}
+                {% endif %}
+            </select>
+
+            <!-- Bulk Driver Update Button - Only for In Transit Status -->
+            {% if status_filter_param == 'in_transit' %}
+            <button type="button" id="bulkUpdateDriverBtn" class="btn btn-warning"
+                style="background-color: #FFC107; color: #000; border: none; padding: 10px 18px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; margin-top: 2px;"
+                onclick="openBulkDriverModal()">
+                <span class="material-icons"
+                    style="font-size: 16px; margin-right: 6px; vertical-align: middle;">local_shipping</span>
+                Update Driver (<span id="selectedCount">0</span>)
+            </button>
+            {% endif %}
+            {% endif %}
+
+            <!-- Bulk Mark as Arrived Button - Only for In Transit Status -->
+            {% if status_filter == 'in_transit' %}
+            <button type="button" id="bulkArrivedBtn" class="btn btn-primary"
+                style="background-color: #17a2b8; color: white; border: none; padding: 10px 18px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; margin-top: 2px;"
+                onclick="openBulkArrivedModal()">
+                <span class="material-icons"
+                    style="font-size: 16px; margin-right: 6px; vertical-align: middle;">check_circle</span>
+                Mark Arrived (<span id="arrivedSelectedCount">0</span>)
+            </button>
+            {% endif %}
+
+            <!-- Bulk Pick Button - Only for Arrived Status -->
+            {% if status_filter == 'arrived' %}
+            <button type="button" id="bulkPickBtn" class="btn btn-primary"
+                style="background-color: #6f42c1; color: white; border: none; padding: 10px 18px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; margin-top: 2px;"
+                onclick="openBulkPickModal()">
+                <span class="material-icons"
+                    style="font-size: 16px; margin-right: 6px; vertical-align: middle;">back_hand</span>
+                Pick (<span id="pickedSelectedCount">0</span>)
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Content -->
+    {% if transmittals %}
+    <div style="border-top: 1px solid #dadce0;">
+        {% for transmittal in transmittals %}
+        <div style="padding: 16px; border-bottom: 1px solid #dadce0; display: flex; gap: 12px; justify-content: space-between; align-items: center; transition: background-color 0.2s;"
+            onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'">
+            <!-- Checkbox -->
+            <input type="checkbox" class="transmittal-checkbox" value="{{ transmittal.id }}"
+                data-status="{{ transmittal.status }}" {% if transmittal.status not in 'in_transit,arrived' %}disabled{% endif %}
+                style="width: 20px; height: 20px; cursor: {% if transmittal.status in 'in_transit,arrived' %}pointer{% else %}not-allowed{% endif %}; flex-shrink: 0; margin-top: 2px; {% if transmittal.status not in 'in_transit,arrived' %}opacity: 0.5;{% endif %}">
+
+            <div style="flex: 1; cursor: pointer;"
+                onclick="window.location='{% url 'transmittals:detail' transmittal.id %}';">
+                <div style="font-weight: 500; font-size: 16px;">{{ transmittal.reference_number }}</div>
+                <div style="font-size: 14px; color: #5f6368; margin-top: 4px;">
+                    From: {{ transmittal.sender.profile.get_full_name }}
+                    <span style="margin: 0 8px;">•</span>
+                    Recipient: {{ transmittal.recipient_name }}
+                </div>
+                <div style="font-size: 13px; color: #5f6368; margin-top: 4px;">
+                    {{ transmittal.description|truncatechars:100 }}
+                </div>
+            </div>
+            <div
+                style="text-align: right; margin-left: 16px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                <div style="font-size: 13px; color: #5f6368;">
+                    {% if transmittal.status == 'in_transit' %}
+                        {{ transmittal.sent_at|date:"M d, Y" }}
+                    {% elif transmittal.status == 'arrived' %}
+                        {{ transmittal.arrived_at|date:"M d, Y" }}
+                    {% elif transmittal.status == 'picked' %}
+                        {{ transmittal.picked_at|date:"M d, Y" }}
+                    {% elif transmittal.status == 'received' %}
+                        {{ transmittal.received_at|date:"M d, Y" }}
+                    {% else %}
+                        {{ transmittal.sent_at|date:"M d, Y" }}
+                    {% endif %}
+                </div>
+                <span style="display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;
+                           {% if transmittal.status == 'in_transit' %}background-color: #ffc107; color: #000;
+                           {% elif transmittal.status == 'arrived' %}background-color: #17a2b8; color: white;
+                           {% elif transmittal.status == 'picked' %}background-color: #6f42c1; color: white;
+                           {% elif transmittal.status == 'received' %}background-color: #28a745; color: white;
+                           {% else %}background-color: #6c757d; color: white;{% endif %}">
+                    {{ transmittal.status|upper }}
+                </span>
+                <!-- Action Buttons -->
+                {% if status_filter == 'in_transit' %}
+                <a href="{% url 'transmittals:mark_arrived' transmittal.id %}?quick=true"
+                    style="display: inline-block; background-color: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none;"
+                    onclick="event.stopPropagation(); return confirm('Mark this transmittal as Arrived?');">
+                    Mark Arrived
+                </a>
+                {% elif status_filter == 'arrived' %}
+                <a href="{% url 'transmittals:mark_pick' transmittal.id %}"
+                    style="display: inline-block; background-color: #6f42c1; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none;"
+                    onclick="event.stopPropagation();">
+                    Pick
+                </a>
+                {% elif status_filter == 'picked' %}
+                {% if transmittal.pick_remarks %}
+                <div onclick="event.stopPropagation();"
+                    style="font-size: 11px; color: #6f42c1; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                    title="{{ transmittal.pick_remarks }}">
+                    {{ transmittal.pick_remarks|truncatechars:30 }}
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding: 64px 32px; text-align: center; color: #5f6368;">
+
+        <div style="font-size: 18px;">
+            {% if status_filter == 'in_transit' %}No items in transit
+            {% elif status_filter == 'arrived' %}No arrived items
+            {% elif status_filter == 'picked' %}No picked items
+            {% else %}Empty{% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Bulk Driver Update Modal -->
+<div id="bulkDriverModal"
+    style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center;">
+    <div
+        style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); width: 90%; max-width: 500px;">
+        <h2 style="margin: 0 0 20px 0; color: #333; font-size: 20px;">Update Driver Information</h2>
+
+        <div
+            style="margin-bottom: 20px; padding: 12px; background-color: #e7f3ff; border-left: 4px solid #0066cc; border-radius: 4px;">
+            <p style="margin: 0; font-size: 13px; color: #0066cc;">
+                <strong>Selected transmittals:</strong> <span id="selectedTransmittalsInfo">0</span>
+            </p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="bulkDriverInput" style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                Enter the name of the driver and plate number
+            </label>
+            <textarea id="bulkDriverInput" placeholder="Enter The name of the driver and plate number"
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: Arial, sans-serif; resize: vertical; min-height: 100px; box-sizing: border-box;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" onclick="closeBulkDriverModal()"
+                style="padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                Cancel
+            </button>
+            <button type="button" id="updateAllBtn" onclick="saveBulkDriverRemarks()"
+                style="padding: 10px 20px; background-color: #28A745; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                Update All
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Pick Modal -->
+<div id="bulkPickModal"
+    style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center;">
+    <div
+        style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); width: 90%; max-width: 500px;">
+        <h2 style="margin: 0 0 20px 0; color: #333; font-size: 20px;">Pick Transmittals</h2>
+
+        <div
+            style="margin-bottom: 20px; padding: 12px; background-color: #f8f0ff; border-left: 4px solid #6f42c1; border-radius: 4px;">
+            <p style="margin: 0; font-size: 13px; color: #6f42c1;">
+                <strong>Selected transmittals:</strong> <span id="selectedPickInfo">0</span>
+            </p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="bulkPickInput" style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                Optional Remarks (e.g., care-of person, pickup notes)
+            </label>
+            <textarea id="bulkPickInput" placeholder="Add any remarks about the pickup (optional)"
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: Arial, sans-serif; resize: vertical; min-height: 80px; box-sizing: border-box;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" onclick="closeBulkPickModal()"
+                style="padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                Cancel
+            </button>
+            <button type="button" id="pickAllBtn" onclick="saveBulkPickRemarks()"
+                style="padding: 10px 20px; background-color: #6f42c1; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                Pick
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Mark as Arrived Modal -->
+<div id="bulkArrivedModal"
+    style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center;">
+    <div
+        style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); width: 90%; max-width: 500px;">
+        <h2 style="margin: 0 0 20px 0; color: #333; font-size: 20px;">Mark Transmittals as Arrived</h2>
+
+        <div
+            style="margin-bottom: 20px; padding: 12px; background-color: #d4edda; border-left: 4px solid #28a745; border-radius: 4px;">
+            <p style="margin: 0; font-size: 13px; color: #155724;">
+                <strong>Selected transmittals:</strong> <span id="selectedArrivedInfo">0</span>
+            </p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="bulkArrivedInput" style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                Optional Remarks
+            </label>
+            <textarea id="bulkArrivedInput" placeholder="Add any remarks about the arrival (optional)"
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: Arial, sans-serif; resize: vertical; min-height: 80px; box-sizing: border-box;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" onclick="closeBulkArrivedModal()"
+                style="padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                Cancel
+            </button>
+            <button type="button" id="arrivedAllBtn" onclick="saveBulkArrivedRemarks()"
+                style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                Mark Arrived
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+</style>
+
+<script>
+    // Checkbox management
+    function updateCheckboxUI() {
+        const checkboxes = document.querySelectorAll('.transmittal-checkbox');
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const driverButton = document.getElementById('bulkUpdateDriverBtn');
+        const arrivedButton = document.getElementById('bulkArrivedBtn');
+        const pickButton = document.getElementById('bulkPickBtn');
+        const selectedCount = document.getElementById('selectedCount');
+        const arrivedSelectedCount = document.getElementById('arrivedSelectedCount');
+        const pickedSelectedCount = document.getElementById('pickedSelectedCount');
+
+        if (selectedCount) selectedCount.textContent = checkedCount;
+        if (arrivedSelectedCount) arrivedSelectedCount.textContent = checkedCount;
+        if (pickedSelectedCount) pickedSelectedCount.textContent = checkedCount;
+
+        if (checkedCount > 0) {
+            if (driverButton) {
+                driverButton.style.display = 'inline-flex';
+                driverButton.style.alignItems = 'center';
+            }
+            if (arrivedButton) {
+                arrivedButton.style.display = 'inline-flex';
+                arrivedButton.style.alignItems = 'center';
+            }
+            if (pickButton) {
+                pickButton.style.display = 'inline-flex';
+                pickButton.style.alignItems = 'center';
+            }
+        } else {
+            if (driverButton) driverButton.style.display = 'none';
+            if (arrivedButton) arrivedButton.style.display = 'none';
+            if (pickButton) pickButton.style.display = 'none';
+        }
+    }
+
+    // Attach event listeners to checkboxes
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxes = document.querySelectorAll('.transmittal-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateCheckboxUI);
+            // Prevent click event from triggering row click
+            checkbox.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        });
+    });
+
+    // Modal functions
+    function openBulkDriverModal() {
+        const checkboxes = document.querySelectorAll('.transmittal-checkbox:checked');
+        const count = checkboxes.length;
+
+        if (count === 0) {
+            alert('Please select at least one transmittal.');
+            return;
+        }
+
+        // Check if all selected transmittals are in_transit status
+        let nonInTransitCount = 0;
+        checkboxes.forEach(cb => {
+            if (cb.dataset.status !== 'in_transit') {
+                nonInTransitCount++;
+            }
+        });
+
+        if (nonInTransitCount > 0) {
+            alert('Update Driver is only available for transmittals with "In Transit" status. Please uncheck transmittals with other statuses.');
+            return;
+        }
+
+        const modal = document.getElementById('bulkDriverModal');
+        const selectedInfo = document.getElementById('selectedTransmittalsInfo');
+        selectedInfo.textContent = count + ' transmittal' + (count > 1 ? 's' : '');
+
+        document.getElementById('bulkDriverInput').value = '';
+        modal.style.display = 'flex';
+    }
+
+    function closeBulkDriverModal() {
+        const modal = document.getElementById('bulkDriverModal');
+        const updateBtn = document.getElementById('updateAllBtn');
+        // Only close if not loading
+        if (!updateBtn.disabled) {
+            modal.style.display = 'none';
+        }
+    }
+
+    let isUpdating = false;
+
+    function saveBulkDriverRemarks() {
+        const remarksText = document.getElementById('bulkDriverInput').value.trim();
+        const updateBtn = document.getElementById('updateAllBtn');
+        const cancelBtn = updateBtn.previousElementSibling;
+
+        // Prevent multiple submissions
+        if (isUpdating) {
+            return;
+        }
+
+        if (!remarksText) {
+            alert('Please enter driver information.');
+            return;
+        }
+
+        const checkboxes = document.querySelectorAll('.transmittal-checkbox:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one transmittal.');
+            return;
+        }
+
+        // Final check: ensure all selected items are in_transit
+        let invalidCount = 0;
+        checkboxes.forEach(cb => {
+            if (cb.dataset.status !== 'in_transit') {
+                invalidCount++;
+            }
+        });
+
+        if (invalidCount > 0) {
+            alert('Update Driver can only be applied to transmittals with "In Transit" status.');
+            return;
+        }
+
+        // Set loading state
+        isUpdating = true;
+        updateBtn.disabled = true;
+        updateBtn.style.opacity = '0.8';
+        updateBtn.style.cursor = 'wait';
+        updateBtn.innerHTML = '<span class="spinner"></span>Updating... Please wait';
+        cancelBtn.disabled = true;
+        cancelBtn.style.opacity = '0.5';
+        cancelBtn.style.cursor = 'not-allowed';
+
+        // Send AJAX request for bulk update
+        const formData = new FormData();
+        formData.append('driver_remarks', remarksText);
+        formData.append('transmittal_ids', JSON.stringify(selectedIds));
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('/transmittals/api/bulk-update-driver/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    updateBtn.innerHTML = '✅ Updated Successfully!';
+                    updateBtn.style.backgroundColor = '#28A745';
+
+                    // Wait a moment before closing and reloading
+                    setTimeout(() => {
+                        alert('Driver information updated for ' + data.updated_count + ' transmittal(s)!');
+                        closeBulkDriverModal();
+                        location.reload();
+                    }, 1000);
+                } else {
+                    alert('Error: ' + data.error);
+                    // Reset button on error
+                    isUpdating = false;
+                    updateBtn.disabled = false;
+                    updateBtn.style.opacity = '1';
+                    updateBtn.style.cursor = 'pointer';
+                    updateBtn.innerHTML = 'Update All';
+                    cancelBtn.disabled = false;
+                    cancelBtn.style.opacity = '1';
+                    cancelBtn.style.cursor = 'pointer';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating driver information.');
+                // Reset button on error
+                isUpdating = false;
+                updateBtn.disabled = false;
+                updateBtn.style.opacity = '1';
+                updateBtn.style.cursor = 'pointer';
+                updateBtn.innerHTML = 'Update All';
+                cancelBtn.disabled = false;
+                cancelBtn.style.opacity = '1';
+                cancelBtn.style.cursor = 'pointer';
+            });
+    }
+
+    // Pick Modal Functions
+    function openBulkPickModal() {
+        const checkboxes = document.querySelectorAll('.transmittal-checkbox:checked');
+        const count = checkboxes.length;
+
+        if (count === 0) {
+            alert('Please select at least one transmittal.');
+            return;
+        }
+
+        // Check if all selected transmittals are arrived status
+        let nonArrivedCount = 0;
+        checkboxes.forEach(cb => {
+            if (cb.dataset.status !== 'arrived') {
+                nonArrivedCount++;
+            }
+        });
+
+        if (nonArrivedCount > 0) {
+            alert('Pick is only available for transmittals with "Arrived" status. Please uncheck transmittals with other statuses.');
+            return;
+        }
+
+        const modal = document.getElementById('bulkPickModal');
+        const selectedInfo = document.getElementById('selectedPickInfo');
+        selectedInfo.textContent = count + ' transmittal' + (count > 1 ? 's' : '');
+
+        document.getElementById('bulkPickInput').value = '';
+        modal.style.display = 'flex';
+    }
+
+    function closeBulkPickModal() {
+        const modal = document.getElementById('bulkPickModal');
+        const pickBtn = document.getElementById('pickAllBtn');
+        // Only close if not loading
+        if (!pickBtn.disabled) {
+            modal.style.display = 'none';
+        }
+    }
+
+    let isPickUpdating = false;
+
+    function saveBulkPickRemarks() {
+        const remarksText = document.getElementById('bulkPickInput').value.trim();
+        const pickBtn = document.getElementById('pickAllBtn');
+        const cancelBtn = pickBtn.previousElementSibling;
+
+        // Prevent multiple submissions
+        if (isPickUpdating) {
+            return;
+        }
+
+        const checkboxes = document.querySelectorAll('.transmittal-checkbox:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one transmittal.');
+            return;
+        }
+
+        // Final check: ensure all selected items are arrived
+        let invalidCount = 0;
+        checkboxes.forEach(cb => {
+            if (cb.dataset.status !== 'arrived') {
+                invalidCount++;
+            }
+        });
+
+        if (invalidCount > 0) {
+            alert('Pick can only be applied to transmittals with "Arrived" status.');
+            return;
+        }
+
+        // Set loading state
+        isPickUpdating = true;
+        pickBtn.disabled = true;
+        pickBtn.style.opacity = '0.8';
+        pickBtn.style.cursor = 'wait';
+        pickBtn.innerHTML = '<span class="spinner"></span>Picking... Please wait';
+        cancelBtn.disabled = true;
+        cancelBtn.style.opacity = '0.5';
+        cancelBtn.style.cursor = 'not-allowed';
+
+        // Send AJAX request for bulk pick
+        const formData = new FormData();
+        formData.append('pick_remarks', remarksText);
+        formData.append('transmittal_ids', JSON.stringify(selectedIds));
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('/transmittals/api/bulk-pick/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    pickBtn.innerHTML = '✅ Picked Successfully!';
+                    pickBtn.style.backgroundColor = '#6f42c1';
+
+                    // Wait a moment before closing and reloading
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    alert('Error: ' + data.error);
+                    // Reset button on error
+                    isPickUpdating = false;
+                    pickBtn.disabled = false;
+                    pickBtn.style.opacity = '1';
+                    pickBtn.style.cursor = 'pointer';
+                    pickBtn.innerHTML = 'Pick';
+                    cancelBtn.disabled = false;
+                    cancelBtn.style.opacity = '1';
+                    cancelBtn.style.cursor = 'pointer';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while picking transmittals.');
+                // Reset button on error
+                isPickUpdating = false;
+                pickBtn.disabled = false;
+                pickBtn.style.opacity = '1';
+                pickBtn.style.cursor = 'pointer';
+                pickBtn.innerHTML = 'Pick';
+                cancelBtn.disabled = false;
+                cancelBtn.style.opacity = '1';
+                cancelBtn.style.cursor = 'pointer';
+            });
+    }
+
+    // Mark as Arrived Modal Functions
+    function openBulkArrivedModal() {
+        const checkboxes = document.querySelectorAll('.transmittal-checkbox:checked');
+        const count = checkboxes.length;
+
+        if (count === 0) {
+            alert('Please select at least one transmittal.');
+            return;
+        }
+
+        // Check if all selected transmittals are in_transit status
+        let nonInTransitCount = 0;
+        checkboxes.forEach(cb => {
+            if (cb.dataset.status !== 'in_transit') {
+                nonInTransitCount++;
+            }
+        });
+
+        if (nonInTransitCount > 0) {
+            alert('Mark as Arrived is only available for transmittals with "In Transit" status. Please uncheck transmittals with other statuses.');
+            return;
+        }
+
+        const modal = document.getElementById('bulkArrivedModal');
+        const selectedInfo = document.getElementById('selectedArrivedInfo');
+        selectedInfo.textContent = count + ' transmittal' + (count > 1 ? 's' : '');
+
+        document.getElementById('bulkArrivedInput').value = '';
+        modal.style.display = 'flex';
+    }
+
+    function closeBulkArrivedModal() {
+        const modal = document.getElementById('bulkArrivedModal');
+        const arrivedBtn = document.getElementById('arrivedAllBtn');
+        // Only close if not loading
+        if (!arrivedBtn.disabled) {
+            modal.style.display = 'none';
+        }
+    }
+
+    let isArrivedUpdating = false;
+
+    function saveBulkArrivedRemarks() {
+        const remarksText = document.getElementById('bulkArrivedInput').value.trim();
+        const arrivedBtn = document.getElementById('arrivedAllBtn');
+        const cancelBtn = arrivedBtn.previousElementSibling;
+
+        // Prevent multiple submissions
+        if (isArrivedUpdating) {
+            return;
+        }
+
+        const checkboxes = document.querySelectorAll('.transmittal-checkbox:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one transmittal.');
+            return;
+        }
+
+        // Final check: ensure all selected items are in_transit
+        let invalidCount = 0;
+        checkboxes.forEach(cb => {
+            if (cb.dataset.status !== 'in_transit') {
+                invalidCount++;
+            }
+        });
+
+        if (invalidCount > 0) {
+            alert('Mark as Arrived can only be applied to transmittals with "In Transit" status.');
+            return;
+        }
+
+        // Set loading state
+        isArrivedUpdating = true;
+        arrivedBtn.disabled = true;
+        arrivedBtn.style.opacity = '0.8';
+        arrivedBtn.style.cursor = 'wait';
+        arrivedBtn.innerHTML = '<span class="spinner"></span>Marking... Please wait';
+        cancelBtn.disabled = true;
+        cancelBtn.style.opacity = '0.5';
+        cancelBtn.style.cursor = 'not-allowed';
+
+        // Send AJAX request for bulk mark as arrived
+        const formData = new FormData();
+        if (remarksText) {
+            formData.append('remarks', remarksText);
+        }
+        formData.append('transmittal_ids', JSON.stringify(selectedIds));
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('/transmittals/api/bulk-arrived/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    arrivedBtn.innerHTML = '✅ Marked Successfully!';
+                    arrivedBtn.style.backgroundColor = '#28a745';
+
+                    // Wait a moment before closing and reloading
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    alert('Error: ' + data.error);
+                    // Reset button on error
+                    isArrivedUpdating = false;
+                    arrivedBtn.disabled = false;
+                    arrivedBtn.style.opacity = '1';
+                    arrivedBtn.style.cursor = 'pointer';
+                    arrivedBtn.innerHTML = 'Mark Arrived';
+                    cancelBtn.disabled = false;
+                    cancelBtn.style.opacity = '1';
+                    cancelBtn.style.cursor = 'pointer';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while marking transmittals as arrived.');
+                // Reset button on error
+                isArrivedUpdating = false;
+                arrivedBtn.disabled = false;
+                arrivedBtn.style.opacity = '1';
+                arrivedBtn.style.cursor = 'pointer';
+                arrivedBtn.innerHTML = 'Mark Arrived';
+                cancelBtn.disabled = false;
+                cancelBtn.style.opacity = '1';
+                cancelBtn.style.cursor = 'pointer';
+            });
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function (event) {
+        const driverModal = document.getElementById('bulkDriverModal');
+        const pickModal = document.getElementById('bulkPickModal');
+        const arrivedModal = document.getElementById('bulkArrivedModal');
+        if (event.target == driverModal && !isUpdating) {
+            closeBulkDriverModal();
+        }
+        if (event.target == pickModal && !isPickUpdating) {
+            closeBulkPickModal();
+        }
+        if (event.target == arrivedModal && !isArrivedUpdating) {
+            closeBulkArrivedModal();
+        }
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !isUpdating && !isPickUpdating && !isArrivedUpdating) {
+            closeBulkDriverModal();
+            closeBulkPickModal();
+            closeBulkArrivedModal();
+        }
+    });
+
+    // Handle Filter (Destination)
+    function handleFilter(filterValue) {
+        const currentUrl = new URL(window.location);
+
+        if (filterValue) {
+            currentUrl.searchParams.set('filter_id', filterValue);
+        } else {
+            currentUrl.searchParams.delete('filter_id');
+        }
+
+        window.location = currentUrl.toString();
+    }
+
+    // Handle Status Filter
+    function handleStatusFilter(statusValue) {
+        const currentUrl = new URL(window.location);
+
+        if (statusValue) {
+            currentUrl.searchParams.set('status', statusValue);
+        } else {
+            currentUrl.searchParams.delete('status');
+        }
+
+        window.location = currentUrl.toString();
+    }
+</script>
+
+{% endblock %}

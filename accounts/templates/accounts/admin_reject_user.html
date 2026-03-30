@@ -1,0 +1,31 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Reject User{% endblock %}
+
+{% block content %}
+<h1>Reject User Registration</h1>
+
+<div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+    <p><strong>Are you sure you want to reject this user?</strong></p>
+    <p>User: <strong>{{ profile.user.username }}</strong> ({{ profile.user.email }})</p>
+    <p>A rejection email will be sent to the user.</p>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="form-group">
+        <label for="reason">Reason for Rejection (optional):</label>
+        <textarea name="reason" id="reason" placeholder="Enter reason for rejection..."></textarea>
+        <div class="help-text">This will be included in the rejection email sent to the user</div>
+    </div>
+    
+    <button type="submit" style="background: #DC3545;">Yes, Reject User</button>
+</form>
+
+<a href="{% url 'accounts:admin_dashboard' %}" 
+   style="display: inline-block; padding: 10px 20px; background: #6c757d; color: white; 
+          border-radius: 5px; text-decoration: none; margin-top: 10px;">
+    Cancel
+</a>
+{% endblock %}

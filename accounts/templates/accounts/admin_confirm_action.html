@@ -1,0 +1,24 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Approve User{% endblock %}
+
+{% block content %}
+<h1>Confirm User Approval</h1>
+
+<div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+    <p><strong>Are you sure you want to approve this user?</strong></p>
+    <p>User: <strong>{{ profile.user.username }}</strong> ({{ profile.user.email }})</p>
+    <p>An approval email will be sent to the user.</p>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" style="background: #28A745;">Yes, Approve User</button>
+</form>
+
+<a href="{% url 'accounts:admin_dashboard' %}" 
+   style="display: inline-block; padding: 10px 20px; background: #6c757d; color: white; 
+          border-radius: 5px; text-decoration: none; margin-top: 10px;">
+    Cancel
+</a>
+{% endblock %}

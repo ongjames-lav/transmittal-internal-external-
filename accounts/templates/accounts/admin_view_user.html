@@ -1,0 +1,114 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}{{ profile.get_full_name }} - User Details{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <!-- Back Button -->
+    <div style="margin-bottom: 24px;">
+        <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-secondary">
+            ← Back to Inbox
+        </a>
+    </div>
+
+    <!-- Detail Header -->
+    <div class="detail-header">
+        <h1 class="detail-title">{{ profile.get_full_name }}</h1>
+        <div class="detail-meta">
+            Registered on {{ profile.created_at|date:"F d, Y" }} at {{ profile.created_at|time:"g:i A" }}
+        </div>
+    </div>
+
+    <!-- User Information -->
+    <div class="detail-body">
+        <div class="detail-field">
+            <div class="detail-label">Username:</div>
+            <div class="detail-value">{{ user.username }}</div>
+        </div>
+
+        <div class="detail-field">
+            <div class="detail-label">Full Name:</div>
+            <div class="detail-value">{{ profile.get_full_name }}</div>
+        </div>
+
+        <div class="detail-field">
+            <div class="detail-label">Email:</div>
+            <div class="detail-value">{{ user.email }}</div>
+        </div>
+
+        <div class="detail-field">
+            <div class="detail-label">Contact:</div>
+            <div class="detail-value">{{ profile.contact }}</div>
+        </div>
+
+        <div class="detail-field">
+            <div class="detail-label">Company:</div>
+            <div class="detail-value">{{ profile.company }}</div>
+        </div>
+
+        <div class="detail-field">
+            <div class="detail-label">Department:</div>
+            <div class="detail-value">{{ profile.department.name|default:"N/A" }}</div>
+        </div>
+
+        <div class="detail-field">
+            <div class="detail-label">Location:</div>
+            <div class="detail-value">{{ profile.location }}</div>
+        </div>
+
+        <div class="detail-field">
+            <div class="detail-label">Address:</div>
+            <div class="detail-value">{{ profile.address }}</div>
+        </div>
+
+        <div class="detail-field">
+            <div class="detail-label">Status:</div>
+            <div class="detail-value">
+                <span class="status-badge 
+                    {% if profile.status == 'pending' %}status-pending
+                    {% elif profile.status == 'approved' %}status-approved
+                    {% elif profile.status == 'rejected' %}status-rejected
+                    {% endif %}">
+                    {{ profile.status|title }}
+                </span>
+            </div>
+        </div>
+
+        {% if profile.admin_notes %}
+        <div class="detail-field">
+            <div class="detail-label">Admin Notes:</div>
+            <div class="detail-value">{{ profile.admin_notes }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="padding: 24px 0; border-top: 1px solid var(--border-gray); display: flex; gap: 12px;">
+        {% if profile.status == 'pending' %}
+        <form method="post" action="{% url 'accounts:admin_approve_user' profile.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">
+                ✓ Approve User
+            </button>
+        </form>
+
+        <a href="{% url 'accounts:admin_reject_user' profile.id %}" class="btn btn-danger">
+            ✕ Reject User
+        </a>
+        {% endif %}
+
+        <a href="{% url 'accounts:admin_edit_user' profile.id %}" class="btn btn-secondary">
+            ✏️ Edit Details
+        </a>
+
+        <form method="post" action="{% url 'accounts:admin_delete_user' profile.id %}"
+            style="display: inline; margin-left: auto;"
+            onsubmit="return confirm('Are you sure you want to delete this user?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                🗑️ Delete
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,224 @@
+{% extends "accounts/gmail_base.html" %}
+{% load static %}
+
+{% block title %}Transmittal Flow - Know More{% endblock %}
+
+{% block content %}
+<style>
+    .flow-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .flow-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .flow-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #202124;
+        margin: 0 0 8px 0;
+    }
+
+    .flow-header p {
+        font-size: 14px;
+        color: #5f6368;
+        margin: 0;
+    }
+
+    .flow-diagram-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .flow-diagram-section h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #202124;
+        margin: 0 0 16px 0;
+    }
+
+    .flow-diagram-image {
+        width: 100%;
+        height: auto;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .flow-steps-section {
+        margin-bottom: 20px;
+    }
+
+    .flow-steps-section h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #202124;
+        margin: 0 0 16px 0;
+    }
+
+    .flow-step {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+        padding: 16px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+
+    .flow-step:hover {
+        background-color: #f0f4ff;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    }
+
+    .flow-step-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background-color: #667eea;
+        color: white;
+        border-radius: 50%;
+        flex-shrink: 0;
+        font-weight: 700;
+        font-size: 18px;
+    }
+
+    .flow-step-content {
+        flex: 1;
+    }
+
+    .flow-step-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .flow-step-title .material-icons {
+        color: #667eea;
+        font-size: 20px;
+    }
+
+    .flow-step-title h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #202124;
+    }
+
+    .flow-step-description {
+        margin: 0;
+        font-size: 14px;
+        color: #5f6368;
+        line-height: 1.5;
+    }
+
+    .info-box {
+        background-color: #e8f0fe;
+        border-left: 4px solid #1f2937;
+        padding: 16px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+
+    .info-box p {
+        margin: 0;
+        font-size: 14px;
+        color: #202124;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+        .flow-container {
+            padding: 16px;
+        }
+
+        .flow-header h1 {
+            font-size: 22px;
+        }
+
+        .flow-step {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .flow-step-number {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+        }
+    }
+</style>
+
+<div class="flow-container">
+    <div class="flow-header">
+        <h1>Transmittal System Flow</h1>
+        <p>Understanding the transmittal process from start to finish</p>
+    </div>
+
+    <!-- Flow Diagram -->
+    <div class="flow-diagram-section">
+        <h2>Visual Flow Diagram</h2>
+        <img src="{% static 'images/transmittal flow.png' %}" alt="Transmittal Flow Diagram" class="flow-diagram-image" />
+    </div>
+
+    <!-- Information Box -->
+    <div class="info-box">
+        <p>
+            <strong>How it works:</strong> The transmittal system manages the flow of documents and packages through multiple stages. 
+            Each stage is tracked with timestamps and digital signatures to ensure accountability and transparency throughout the entire process.
+        </p>
+    </div>
+
+    <!-- Flow Steps -->
+    <div class="flow-steps-section">
+        <h2>Process Steps</h2>
+        
+        {% for step in flow_steps %}
+        <div class="flow-step">
+            <div class="flow-step-number">{{ step.number }}</div>
+            <div class="flow-step-content">
+                <div class="flow-step-title">
+                    <span class="material-icons">{{ step.icon }}</span>
+                    <h3>{{ step.status }}</h3>
+                </div>
+                <p class="flow-step-description">{{ step.description }}</p>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Additional Info -->
+        <div class="flow-step" style="border-left-color: #34a853;">
+            <div class="flow-step-number" style="background-color: #34a853;">✓</div>
+            <div class="flow-step-content">
+                <div class="flow-step-title">
+                    <span class="material-icons" style="color: #34a853;">done_all</span>
+                    <h3>Completed</h3>
+                </div>
+                <p class="flow-step-description">The transmittal has been successfully delivered and received by the intended recipient with full verification.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Features -->
+    <div class="info-box" style="background-color: #f3e5f5; border-left-color: #9c27b0;">
+        <p>
+            <strong>Key Features:</strong>
+            <br>• Real-time status tracking for all transmittals
+            <br>• Digital signatures for receipt confirmation
+            <br>• Automated email notifications at each stage
+            <br>• Location-based custodian management
+            <br>• Comprehensive activity logs and audit trails
+        </p>
+    </div>
+</div>
+{% endblock %}

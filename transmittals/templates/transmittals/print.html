@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transmittal Report - {{ transmittal.reference_number }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .print-container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            min-height: 100vh;
+        }
+
+        /* Header Section */
+        .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #333;
+        }
+
+        .logo-placeholder {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .company-address {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .report-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .reference-line {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        /* Main Content */
+        .print-body {
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            gap: 0;
+            margin-bottom: 20px;
+            align-items: stretch;
+        } 
+
+        .section-column {
+            border: 2px solid #333;
+            padding: 15px;
+        }
+
+        .section-separator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-size: 32px;
+            font-weight: 900;
+            color: #000;
+            background: #000;
+            border-top: 4px solid #000;
+            border-bottom: 4px solid #000;
+            line-height: 1;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .info-row {
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #333;
+            display: inline-block;
+            width: 100px;
+        }
+
+        .info-value {
+            color: #555;
+            display: inline;
+            word-break: break-word;
+        }
+
+        .description-section {
+            margin-top: 20px;
+            border: 2px solid #333;
+            padding: 15px;
+        }
+
+        .description-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .description-content {
+            font-size: 12px;
+            color: #555;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 80px;
+        }
+
+        .remarks-section {
+            margin-top: 20px;
+            border: 2px solid #333;
+            padding: 15px;
+        }
+
+        .remarks-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .remarks-content {
+            font-size: 12px;
+            color: #555;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 40px;
+        }
+
+        /* Footer Section - Signature Area */
+        .signature-section {
+            margin-top: 40px;
+            border-top: 3px solid #333;
+            padding-top: 30px;
+        }
+
+        .signature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .signature-box {
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-bottom: 5px;
+            padding-top: 50px;
+            min-height: 60px;
+        }
+
+        .signature-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+
+            .print-container {
+                max-width: 100%;
+                margin: 0;
+                padding: 5mm;
+                box-shadow: none;
+                min-height: auto;
+            }
+
+            .no-print {
+                display: none;
+            }
+
+            .print-header,
+            .print-body,
+            .signature-section {
+                page-break-inside: avoid;
+            }
+
+            .print-header {
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+            }
+
+            .report-title {
+                font-size: 24px;
+                margin-bottom: 5px;
+            }
+
+            .section-header {
+                gap: 15px;
+                margin-bottom: 10px;
+            }
+
+            .section-column {
+                padding: 10px;
+            }
+
+            .description-section,
+            .remarks-section {
+                margin-top: 10px;
+                padding: 10px;
+            }
+
+            .description-content {
+                min-height: 50px;
+            }
+
+            .signature-section {
+                margin-top: 20px;
+                padding-top: 15px;
+            }
+
+            .signature-line {
+                min-height: 40px;
+                padding-top: 30px;
+            }
+        }
+
+        /* Non-Print Elements */
+        .print-actions {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+
+        .print-actions button {
+            background-color: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .print-actions button:hover {
+            background-color: #5568d3;
+        }
+
+        .print-actions .close-btn {
+            background-color: #6c757d;
+        }
+
+        .print-actions .close-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background-color: #FFC107;
+            color: #000;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .status-badge.arrived {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-badge.received {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .status-badge.cancelled {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="no-print print-actions">
+        <button onclick="window.print()">🖨️ Print</button>
+        <button class="close-btn" onclick="window.history.back()">← Back</button>
+    </div>
+
+    <div class="print-container">
+        <!-- Header Section -->
+        <div class="print-header">
+            <div class="logo-placeholder">📦</div>
+            <div class="company-name">CDC MFG CORP</div>
+            <div class="company-address">Address: City, State</div>
+            <div class="report-title">Transmittal Report</div>
+            <div class="reference-line">
+                <div><strong>Reference:</strong> {{ transmittal.reference_number }}</div>
+                <div><strong>Date/Time:</strong> {% if transmittal.sent_at %}{{ transmittal.sent_at|date:"M d, Y" }} {{
+                    transmittal.sent_at|time:"g:i A" }}{% endif %}</div>
+            </div>
+            <div style="margin-top: 10px;">
+                <span
+                    class="status-badge {% if transmittal.status == 'arrived' %}arrived{% elif transmittal.status == 'received' %}received{% elif transmittal.status == 'cancelled' %}cancelled{% endif %}">
+                    {{ transmittal.get_status_display|upper }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="print-body">
+            <!-- Origin and Destination Section -->
+            <div class="section">
+                <div class="section-header">
+                    <!-- Origin/From Section -->
+                    <div class="section-column">
+                        <div class="section-title">Origin</div>
+                        <div class="info-row">
+                            <span class="info-label">Location:</span>
+                            <span class="info-value"><strong>{{ transmittal.origin_location.name|default:"Unknown"
+                                    }}</strong></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">From:</span>
+                            <span class="info-value">{{
+                                transmittal.sender.get_full_name|default:transmittal.sender.username }}</span>
+                        </div>
+                        <div style="border-top: 5px solid #333; margin: 8px 0;"></div>
+                        <div class="info-row">
+                            <span class="info-label">Department:</span>
+                            <span class="info-value">{{ transmittal.sender_department|default:"-" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Separator Line -->
+                   <div style="width: 2px; z-index: 10px; background-color: #333;"></div>                      
+                    <!-- Destination/To Section -->
+                    <div class="section-column">
+                        <div class="section-title">Destination</div>
+                        <div class="info-row">
+                            <span class="info-label">Location:</span>
+                            <span class="info-value"><strong>{% if transmittal.assigned_location_text %}{{ transmittal.assigned_location_text }}{% elif transmittal.destination_location %}{{ transmittal.destination_location.name }}{% else %}Unknown{% endif %}</strong></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">To:</span>
+                            <span class="info-value">{{ transmittal.recipient_name }}</span>
+                        </div>
+                        <div style="border-top: 5px solid #333; margin: 8px 0;"></div>
+                        <div class="info-row">
+                            <span class="info-label">Department:</span>
+                            <span class="info-value">{{ transmittal.recipient_department }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description Section -->
+            <div class="description-section">
+                <div class="description-title">Description</div>
+                <div class="description-content">{{ transmittal.description }}</div>
+            </div>
+
+            <!-- Remarks Section (if any) -->
+            {% if transmittal.remarks %}
+            <div class="remarks-section">
+                <div class="remarks-title">Remarks</div>
+                <div class="remarks-content">{{ transmittal.remarks }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-grid">
+                <div class="signature-box" style="border: none; padding: 15px;">
+                    {% if transmittal.received_by.profile.digital_signature and transmittal.status == 'received' %}
+                    <div style="min-height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                        <img src="{{ transmittal.received_by.profile.digital_signature.url }}" alt="Signature" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
+                    {% endif %}
+                    <div style="text-align: center; font-size: 12px; margin: 8px 0;">
+                        <div class="signature-label" style="font-size: 12px; margin-bottom: 5px;">Received by</div>
+                        {% if transmittal.received_by %}{{ transmittal.received_by.get_full_name|default:transmittal.received_by.username }}{% endif %}
+                    </div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-line" style="display: flex; align-items: center; justify-content: center; font-size: 11px; padding-top: 25px;">
+                        {% if transmittal.received_at %}
+                            {{ transmittal.received_at|date:"M d, Y" }}
+                        {% endif %}
+                    </div>
+                    <div class="signature-label">Date</div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-line" style="display: flex; align-items: center; justify-content: center; font-size: 11px; padding-top: 25px;">
+                        {% if transmittal.received_at %}
+                            {{ transmittal.received_at|time:"g:i A" }}
+                        {% endif %}
+                    </div>
+                    <div class="signature-label">Time</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

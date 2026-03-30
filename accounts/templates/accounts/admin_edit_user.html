@@ -1,0 +1,86 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Edit User - {{ profile.user.username }}{% endblock %}
+
+{% block content %}
+<h1>Edit User: {{ profile.user.username }}</h1>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    
+    <fieldset class="fieldset-group">
+        <legend>User Information (Read-only)</legend>
+        
+        <div class="form-group">
+            <label>Username:</label>
+            <input type="text" value="{{ user.username }}" disabled style="background: #e9ecef;">
+        </div>
+        
+        <div class="form-group">
+            <label>First Name:</label>
+            {{ form.first_name }}
+        </div>
+        
+        <div class="form-group">
+            <label>Last Name:</label>
+            {{ form.last_name }}
+        </div>
+        
+        <div class="form-group">
+            <label>Email:</label>
+            {{ form.email }}
+        </div>
+    </fieldset>
+    
+    <fieldset class="fieldset-group">
+        <legend>Assignment Details</legend>
+        
+        <div class="form-group">
+            <label for="{{ form.assigned_location.id_for_label }}">Assigned Location:</label>
+            {{ form.assigned_location }}
+            {% if form.assigned_location.errors %}
+            <div style="color: #dc3545; font-size: 12px; margin-top: 4px;">
+                {% for error in form.assigned_location.errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.department.id_for_label }}">Department:</label>
+            {{ form.department }}
+            {% if form.department.errors %}
+            <div style="color: #dc3545; font-size: 12px; margin-top: 4px;">
+                {% for error in form.department.errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </fieldset>
+    
+    <fieldset class="fieldset-group">
+        <legend>Registration Status</legend>
+        
+        <div class="form-group">
+            <label for="{{ form.status.id_for_label }}">Status:</label>
+            {{ form.status }}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.admin_notes.id_for_label }}">Admin Notes:</label>
+            {{ form.admin_notes }}
+            <div class="help-text">Internal notes visible only to administrators</div>
+        </div>
+    </fieldset>
+    
+    <button type="submit">Save Changes</button>
+</form>
+
+<a href="{% url 'accounts:admin_dashboard' %}" 
+   style="display: inline-block; padding: 10px 20px; background: #6c757d; color: white; 
+          border-radius: 5px; text-decoration: none; margin-top: 20px;">
+    Back to Dashboard
+</a>
+{% endblock %}

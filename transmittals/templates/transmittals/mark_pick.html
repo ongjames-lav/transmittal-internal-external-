@@ -1,0 +1,281 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}Mark as Picked{% endblock %}
+
+{% block content %}
+<style>
+    .container {
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .confirm-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .confirm-header {
+        background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .confirm-header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    .confirm-header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        font-size: 14px;
+    }
+
+    .confirm-body {
+        padding: 30px;
+    }
+
+    .info-box {
+        background: #f3e5f5;
+        border: 1px solid #6f42c1;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: #4a148c;
+    }
+
+    .info-box strong {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .transmittal-info {
+        background: #f8f9fa;
+        border-left: 4px solid #6f42c1;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+
+    .info-item {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .info-item strong {
+        color: #333;
+        display: inline-block;
+        width: 150px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #6f42c1;
+        color: white;
+        border-radius: 15px;
+        font-weight: 600;
+        font-size: 13px;
+        margin-top: 10px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-success {
+        background: #6f42c1;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #5a32a3;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(111, 66, 193, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3);
+    }
+
+    .confirm-footer {
+        background: #f8f9fa;
+        padding: 15px 30px;
+        border-top: 1px solid #dee2e6;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+    }
+
+    .action-description {
+        font-size: 13px;
+        color: #555;
+        margin-top: 15px;
+        padding: 12px;
+        background: #f0f0f0;
+        border-radius: 4px;
+        border-left: 3px solid #6f42c1;
+    }
+
+    .remarks-section {
+        margin-bottom: 25px;
+        padding: 20px;
+        background: #f3e5f5;
+        border-radius: 4px;
+        border: 1px solid #ce93d8;
+    }
+
+    .remarks-section h5 {
+        margin: 0 0 15px 0;
+        color: #6f42c1;
+        font-weight: 600;
+    }
+
+    .remarks-section p {
+        font-size: 13px;
+        color: #666;
+        margin: 0 0 15px 0;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 13px;
+        resize: vertical;
+        min-height: 100px;
+        box-sizing: border-box;
+    }
+
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #6f42c1;
+        box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+    }
+
+    .help-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+</style>
+
+<div class="container">
+    <div class="confirm-card">
+        <!-- Header -->
+        <div class="confirm-header">
+            <h1>📦 Mark as Picked</h1>
+            <p>Confirm pickup of this transmittal</p>
+        </div>
+
+        <!-- Body -->
+        <div class="confirm-body">
+            <!-- Info Message -->
+            <div class="info-box">
+                <strong>Picking Up Transmittal</strong>
+                <p>You are about to mark this transmittal as <strong>PICKED</strong>. The sender and recipient will be
+                    notified of this status change.</p>
+            </div>
+
+            <!-- Transmittal Details -->
+            <div class="transmittal-info">
+                <div class="info-item">
+                    <strong>Reference:</strong> {{ transmittal.reference_number }}
+                </div>
+                <div class="info-item">
+                    <strong>From:</strong> {{ transmittal.sender.get_full_name|default:transmittal.sender.username }}
+                </div>
+                <div class="info-item">
+                    <strong>To:</strong> {{ transmittal.recipient_name }}
+                </div>
+                <div class="info-item">
+                    <strong>Destination:</strong> {% if transmittal.assigned_location_text %}{{ transmittal.assigned_location_text }}{% elif transmittal.destination_location %}{{ transmittal.destination_location.name }}{% else %}Unknown{% endif %}
+                </div>
+                <div class="info-item">
+                    <strong>Current Status:</strong> {{ transmittal.get_status_display }}
+                </div>
+                <div style="margin-top: 10px;">
+                    <span class="status-badge">PICKED</span>
+                </div>
+            </div>
+
+            <!-- Action Description -->
+            <div class="action-description">
+                <strong>📦 Marking as Picked:</strong> You are confirming that this transmittal has been picked up from
+                the custodian facility. The sender and recipient will be notified.
+            </div>
+
+            <!-- Confirm Form -->
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Pick Remarks Section -->
+                <div class="remarks-section">
+                    <h5><strong>📝 Pickup Remarks (Optional)</strong></h5>
+                    <p>Optionally add remarks about the pickup (e.g., care-of person details, special handling notes,
+                        or any other relevant information).</p>
+
+                    <div class="form-group">
+                        <label for="pick_remarks">Remarks</label>
+                        <textarea id="pick_remarks" name="pick_remarks" placeholder="Enter any pickup remarks here..."></textarea>
+                        <div class="help-text">
+                            💡 Tip: You can include details like who picked up the item, any special conditions, or
+                            care-of person information.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-success">✓ Confirm Pickup</button>
+                    <a href="{% url 'transmittals:detail' transmittal.id %}" class="btn btn-secondary">← Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="confirm-footer">
+            <p>The sender and recipient will be notified of this status change.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

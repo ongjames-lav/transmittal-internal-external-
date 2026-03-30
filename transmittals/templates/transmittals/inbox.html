@@ -1,0 +1,1062 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}
+{% if folder == 'inbox' %}Incoming{% else %}Outgoing{% endif %}
+{% endblock %}
+
+{% block content %}
+<style>
+    .column-header {
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+        padding: 12px 12px;
+        margin: 0;
+        border-radius: 4px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
+        white-space: nowrap;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .column-header:hover {
+        background-color: #f0f0f0;
+    }
+
+    .drag-handle {
+        display: inline-flex;
+        align-items: center;
+        cursor: grab;
+        color: #9ca3af;
+        margin-right: 4px;
+        font-size: 14px;
+        padding: 4px 6px;
+        border-radius: 3px;
+        transition: all 0.2s ease;
+    }
+
+    .drag-handle:hover {
+        background-color: #e5e7eb;
+        color: #374151;
+        cursor: grab;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .column-header.dragging {
+        opacity: 0.5;
+        background-color: #e8f5e9 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 100;
+    }
+
+    .column-header.drag-over {
+        background-color: #c8e6c9 !important;
+        border-left: 3px solid #00703c;
+    }
+
+    .header-text {
+        display: block;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .sort-indicator {
+        font-size: 11px;
+        font-weight: bold;
+        color: #00703c;
+        flex-shrink: 0;
+        margin-left: 4px;
+    }
+
+    .resize-handle {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 10px;
+        height: 100%;
+        cursor: col-resize;
+        user-select: none;
+        background-color: transparent;
+        transition: background-color 0.2s ease;
+        z-index: 50;
+    }
+
+    .resize-handle:hover {
+        background-color: rgba(76, 175, 80, 0.6);
+        border-left: 2px solid rgba(76, 175, 80, 0.8);
+    }
+
+    #header-row {
+        position: relative;
+        z-index: 5;
+        background-color: #f8f9fa;
+        margin-bottom: 0;
+    }
+
+    .inbox-container {
+        position: relative;
+    }
+
+    .inbox-list {
+        position: relative;
+        z-index: 1;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Dynamic Grid Layout */
+    .inbox-container {
+        /* Default Initial Widths */
+        --col-name: 220px;
+        --col-description: 1fr;
+        --col-reference: 240px;
+        --col-time: 180px;
+        --col-action: 150px;
+
+        position: relative;
+        overflow-x: auto;
+        /* Allow horizontal scrolling */
+        padding-bottom: 20px;
+        /* Space for scrollbar */
+    }
+
+    #header-row,
+    .inbox-row {
+        display: grid !important;
+        grid-template-columns: minmax(80px, var(--col-name)) minmax(80px, var(--col-description)) minmax(80px, var(--col-reference)) minmax(80px, var(--col-time)) minmax(80px, var(--col-action));
+        gap: 0;
+        /* Ensure rows extend to at least the container width, but can grow larger for horizontal scroll */
+        width: 100%;
+        min-width: 100%;
+        /* If columns sum > 100%, grid expands and container scrolls */
+    }
+
+    /* Resizers */
+    /* Resizers */
+    .col-resizer {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 10px;
+        cursor: col-resize;
+        user-select: none;
+        z-index: 20;
+        opacity: 0;
+        transition: opacity 0.2s, background-color 0.2s;
+        transform: translateX(50%);
+    }
+
+
+
+    .column-header:hover .col-resizer,
+    .col-resizer:hover,
+    .col-resizer.resizing {
+        opacity: 1;
+        background-color: #dadce0;
+    }
+
+    .col-resizer.resizing {
+        background-color: #00703c;
+        /* Active color */
+        width: 7px;
+        /* A bit thicker when dragging */
+    }
+
+    /* Sort Dropdown */
+    .sort-dropdown-wrapper {
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 60;
+    }
+
+    .sort-btn {
+        background: white;
+        border: 1px solid #dadce0;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        color: #5f6368;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .sort-btn:hover {
+        background-color: #f8f9fa;
+        color: #202124;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .sort-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 8px;
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 200px;
+        display: none;
+        overflow: hidden;
+        animation: fadeIn 0.1s ease-out;
+    }
+
+    .sort-menu.show {
+        display: block;
+    }
+
+    .sort-item {
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        border: none;
+        background: none;
+        text-align: left;
+        cursor: pointer;
+        font-size: 14px;
+        color: #3c4043;
+    }
+
+    .sort-item:hover {
+        background-color: #f1f3f4;
+    }
+
+    .sort-item.active {
+        color: #00703c;
+        background-color: #e6f4ea;
+        font-weight: 500;
+    }
+
+    .check-icon {
+        margin-left: auto;
+        opacity: 0;
+    }
+
+    .sort-item.active .check-icon {
+        opacity: 1;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .sort-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 60;
+    }
+
+    .sort-dropdown-wrapper {
+        position: relative;
+        /* positioning handled by parent flex container now */
+        right: auto;
+        top: auto;
+        transform: none;
+    }
+
+    .sort-direction-btn {
+        background: white;
+        border: 1px solid #dadce0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        /* Circle shape */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #5f6368;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .sort-direction-btn:hover {
+        background-color: #f8f9fa;
+        color: #202124;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border-color: #dadce0;
+    }
+
+    /* Context Menu Styles */
+    .context-menu {
+        display: none;
+        position: fixed;
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        min-width: 150px;
+    }
+
+    .context-menu.show {
+        display: block;
+    }
+
+    .context-menu-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #202124;
+        text-decoration: none;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+    }
+
+    .context-menu-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .context-menu-item.danger {
+        color: #dc3545;
+    }
+
+    .context-menu-item.danger:hover {
+        background-color: #ffebee;
+    }
+
+    .context-menu-divider {
+        height: 1px;
+        background-color: #dadce0;
+        margin: 4px 0;
+    }
+
+    /* ============================================================
+       MOBILE CARD LAYOUT (Responsive Overrides)
+       ============================================================ */
+    @media (max-width: 768px) {
+
+        /* Hide Desktop Elements */
+        #header-row,
+        .col-resizer,
+        .resize-handle,
+        .drag-handle {
+            display: none !important;
+        }
+
+        /* Container Overrides */
+        .inbox-container {
+            overflow-x: hidden;
+            /* No horizontal scroll */
+            padding-bottom: 60px;
+            /* Space for FAB or bottom nav if any */
+        }
+
+        /* Row becomes a Card */
+        .inbox-row {
+            display: flex !important;
+            flex-direction: column;
+            width: 100%;
+            height: auto !important;
+            padding: 16px;
+            border-bottom: 1px solid #f1f3f4;
+            position: relative;
+            background: white;
+            transition: background 0.2s;
+        }
+
+        .inbox-row:active {
+            background-color: #f5f5f5;
+        }
+
+        /* Reset Column Styles for stacking */
+        .col-name,
+        .col-description,
+        .col-reference,
+        .col-time,
+        .col-action {
+            width: 100% !important;
+            border-right: none !important;
+            padding: 0 !important;
+            white-space: normal !important;
+            /* Allow text wrap */
+            overflow: visible !important;
+            text-overflow: clip !important;
+            display: block !important;
+            height: auto !important;
+        }
+
+        /* 1. Sender / Recipient (Top Left) */
+        .col-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #202124;
+            margin-bottom: 4px;
+            padding-right: 80px !important;
+            /* Space for date */
+        }
+
+        /* 2. Subject / Description (Middle) */
+        .col-description {
+            font-size: 14px;
+            color: #202124;
+            margin-bottom: 4px;
+            line-height: 1.4;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden !important;
+        }
+
+        /* 3. Reference Number (Inline Tag) */
+        .col-reference {
+            display: inline-block !important;
+            width: auto !important;
+            font-size: 11px;
+            background-color: #e6f4ea;
+            color: #137333;
+            padding: 2px 8px !important;
+            border-radius: 4px;
+            margin-top: 4px;
+            text-align: left !important;
+        }
+
+        /* 4. Time (Absolute Top Right) */
+        .col-time {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: auto !important;
+            font-size: 12px;
+            color: #5f6368;
+            text-align: right;
+            border: none;
+        }
+
+        /* 5. Action Column */
+        .col-action {
+            margin-top: 12px;
+            padding: 12px 0 !important;
+            border-top: 1px solid #f1f3f4;
+            display: flex !important;
+            justify-content: center;
+            gap: 8px;
+        }
+    }
+</style>
+
+<div class="inbox-container" id="inboxContainer">
+    <div class="inbox-header" style="position: relative; padding-right: 150px;"> <!-- Padding for sort button -->
+        <h1>
+            {% if folder == 'inbox' %}
+            Incoming {% if status_filter %}- {{ status_filter|title }}{% endif %}
+            {% else %}
+            Outgoing {% if status_filter %}- {{ status_filter|title }}{% endif %}
+            {% endif %}
+        </h1>
+
+        <!-- Status Filter Buttons - Only for Sent Folder (not for Cancelled) -->
+        {% if folder == 'sent' and status_filter != 'cancelled' %}
+        <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center;">
+            <div style="display: flex; gap: 8px;">
+                <button class="status-btn {% if not status_filter %}active{% endif %}" onclick="handleStatusFilter('')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if not status_filter %}#1a73e8{% else %}white{% endif %}; color: {% if not status_filter %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    ALL
+                </button>
+                <button class="status-btn {% if status_filter == 'in_transit' %}active{% endif %}"
+                    onclick="handleStatusFilter('in_transit')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if status_filter == 'in_transit' %}#1a73e8{% else %}white{% endif %}; color: {% if status_filter == 'in_transit' %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    IN TRANSIT
+                </button>
+                <button class="status-btn {% if status_filter == 'arrived' %}active{% endif %}"
+                    onclick="handleStatusFilter('arrived')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if status_filter == 'arrived' %}#1a73e8{% else %}white{% endif %}; color: {% if status_filter == 'arrived' %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    ARRIVED
+                </button>
+                <button class="status-btn {% if status_filter == 'picked' %}active{% endif %}"
+                    onclick="handleStatusFilter('picked')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if status_filter == 'picked' %}#1a73e8{% else %}white{% endif %}; color: {% if status_filter == 'picked' %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    PICKED UP
+                </button>
+                <button class="status-btn {% if status_filter == 'received' %}active{% endif %}"
+                    onclick="handleStatusFilter('received')"
+                    style="padding: 8px 16px; border-radius: 20px; border: 1px solid #dadce0; background-color: {% if status_filter == 'received' %}#1a73e8{% else %}white{% endif %}; color: {% if status_filter == 'received' %}white{% else %}#202124{% endif %}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    RECEIVED
+                </button>
+            </div>
+
+            <!-- Date Filter Section -->
+            <div
+                style="display: flex; gap: 8px; align-items: center; padding-left: 16px; border-left: 1px solid #dadce0;">
+                <select id="dateFilter" onchange="applyDateFilter(this.value)"
+                    style="padding: 8px 12px; border-radius: 20px; border: 1px solid #dadce0; font-size: 12px; font-weight: 500; cursor: pointer; background-color: white;">
+                    <option value="">All Dates</option>
+                    <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+                    <option value="week" {% if date_filter == 'week' %}selected{% endif %}>Last 7 Days</option>
+                    <option value="month" {% if date_filter == 'month' %}selected{% endif %}>Last 30 Days</option>
+                    <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Range</option>
+                </select>
+
+                <!-- Custom Date Range Inputs (hidden by default) -->
+                <div id="customDateRange"
+                    style="display: {% if date_filter == 'custom' %}flex{% else %}none{% endif %}; gap: 8px; align-items: center;">
+                    <input type="date" id="startDate" value="{{ start_date }}"
+                        style="padding: 8px 12px; border-radius: 4px; border: 1px solid #dadce0; font-size: 12px;">
+                    <span style="font-size: 12px; color: #5f6368;">to</span>
+                    <input type="date" id="endDate" value="{{ end_date }}"
+                        style="padding: 8px 12px; border-radius: 4px; border: 1px solid #dadce0; font-size: 12px;">
+                    <button onclick="applyCustomDateRange()"
+                        style="padding: 8px 16px; border-radius: 20px; border: 1px solid #1a73e8; background-color: #1a73e8; color: white; font-size: 12px; font-weight: 500; cursor: pointer;">
+                        Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Sort Dropdown -->
+        <!-- Sort Controls -->
+        <div class="sort-controls">
+            <!-- Sort Field Dropdown -->
+            <div class="sort-dropdown-wrapper">
+                <button class="sort-btn" id="sortBtn" onclick="toggleSortMenu(event)">
+                    <span class="material-icons" style="font-size: 18px;">sort</span>
+                    <span id="currentSortLabel">Sort by</span>
+                    <span class="material-icons" style="font-size: 16px;">arrow_drop_down</span>
+                </button>
+                <div class="sort-menu" id="sortMenu">
+                    <button
+                        class="sort-item {% if sort_field == 'recipient_name' or sort_field == 'first_name' %}active{% endif %}"
+                        onclick="applySort('{% if folder == 'inbox' %}sender__profile__user__first_name{% else %}recipient_name{% endif %}')">
+                        Name <span class="check-icon">✓</span>
+                    </button>
+                    <button class="sort-item {% if sort_field == 'description' %}active{% endif %}"
+                        onclick="applySort('description')">
+                        Description <span class="check-icon">✓</span>
+                    </button>
+                    <button class="sort-item {% if sort_field == 'reference_number' %}active{% endif %}"
+                        onclick="applySort('reference_number')">
+                        Transmittal Number <span class="check-icon">✓</span>
+                    </button>
+                    <button class="sort-item {% if sort_field == 'sent_at' %}active{% endif %}"
+                        onclick="applySort('sent_at')">
+                        Time Sent <span class="check-icon">✓</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Direction Toggle -->
+            <button class="sort-direction-btn" onclick="toggleSortDirection()"
+                title="{% if current_sort|first == '-' %}Sort Ascending{% else %}Sort Descending{% endif %}">
+                <span class="material-icons">
+                    {% if current_sort|first == '-' %}arrow_downward{% else %}arrow_upward{% endif %}
+                </span>
+            </button>
+        </div>
+    </div>
+
+    {% if transmittals %}
+
+    <!-- Column Header Row -->
+    <div id="header-row"
+        style="align-items: stretch; padding: 0; border-bottom: 2px solid #dadce0; background-color: #f8f9fa; color: #5f6368; position: relative;">
+
+        <!-- NAME COL -->
+        <div id="col-name" class="column-header" style="border-right: 1px solid #dadce0; position: relative;"
+            data-col="name">
+            <span class="drag-handle" draggable="true" title="Reorder Column">⋮⋮</span>
+            <span class="header-text">Name</span>
+            {% if sort_field == 'first_name' or sort_field == 'recipient_name' %}<span class="sort-indicator">{{
+                sort_direction }}</span>{% endif %}
+            <div class="col-resizer" onmousedown="startResizeCol(event, 'name')"></div>
+        </div>
+
+        <!-- DESCRIPTION COL -->
+        <div id="col-description" class="column-header" style="border-right: 1px solid #dadce0; position: relative;"
+            data-col="description">
+            <span class="drag-handle" draggable="true" title="Reorder Column">⋮⋮</span>
+            <span class="header-text">Description</span>
+            {% if sort_field == 'description' %}<span class="sort-indicator">{{ sort_direction }}</span>{% endif %}
+            <div class="col-resizer" onmousedown="startResizeCol(event, 'description')"></div>
+        </div>
+
+        <!-- REFERENCE COL -->
+        <div id="col-reference" class="column-header"
+            style="border-right: 1px solid #dadce0; justify-content: center; position: relative;" data-col="reference">
+            <span class="drag-handle" draggable="true" title="Reorder Column">⋮⋮</span>
+            <span class="header-text" style="text-align: center;">Transmittal Number</span>
+            {% if sort_field == 'reference_number' %}<span class="sort-indicator">{{ sort_direction }}</span>{% endif %}
+            <div class="col-resizer" onmousedown="startResizeCol(event, 'reference')"></div>
+        </div>
+
+        <!-- TIME COL -->
+        <div id="col-time" class="column-header" style="justify-content: flex-end; position: relative;" data-col="time">
+            <span class="header-text">Time Sent</span>
+            {% if sort_field == 'sent_at' %}<span class="sort-indicator">{{ sort_direction }}</span>{% endif %}
+            <span class="drag-handle" draggable="true" title="Reorder Column">⋮⋮</span>
+            <div class="col-resizer" onmousedown="startResizeCol(event, 'time')"></div>
+        </div>
+
+        <!-- ACTION COL -->
+        <div id="col-action" class="column-header" style="justify-content: center; position: relative;"
+            data-col="action">
+            <span class="drag-handle" draggable="true" title="Reorder Column">⋮⋮</span>
+            <span class="header-text">Action</span>
+            <div class="col-resizer" onmousedown="startResizeCol(event, 'action')"></div>
+        </div>
+    </div>
+
+    <ul class="inbox-list" id="inbox-list">
+        {% for email in transmittals %}
+        <li class="inbox-row"
+            style="cursor: pointer; align-items: stretch; padding: 0; border-bottom: 1px solid #dadce0; list-style: none; position: relative; overflow: visible;"
+            data-columns="name|description|reference|time|action" data-email-id="{{ email.id }}"
+            data-email-status="{{ email.status }}">
+
+            <!-- Sender Name -->
+            <div class="col-name"
+                style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 12px 8px 12px 8px; border-right: 1px solid #dadce0; display: flex; align-items: center; cursor: pointer;"
+                onclick="window.location='{% url 'transmittals:detail' email.id %}'">
+                <strong>
+                    {% if folder == 'inbox' %}
+                    {{ email.sender.profile.get_full_name }}
+                    {% else %}
+                    To: {{ email.recipient_name }}
+                    {% endif %}
+                </strong>
+            </div>
+
+            <!-- Description -->
+            <div class="col-description"
+                style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #5f6368; font-size: 14px; padding: 12px 8px; border-right: 1px solid #dadce0; display: flex; align-items: center; cursor: pointer;"
+                onclick="window.location='{% url 'transmittals:detail' email.id %}'">
+                {{ email.description|truncatechars:50 }}
+            </div>
+
+            <!-- Transmittal Number -->
+            <div class="col-reference"
+                style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-weight: 500; font-size: 13px; color: #00703c; padding: 12px 8px; border-right: 1px solid #dadce0; display: block; cursor: pointer;"
+                onclick="window.location='{% url 'transmittals:detail' email.id %}'">
+                {{ email.reference_number }}
+            </div>
+
+            <!-- Time Sent -->
+            <div class="col-time"
+                style="text-align: right; color: #5f6368; font-size: 13px; padding: 12px 8px; display: flex; align-items: center; justify-content: flex-end; cursor: pointer; border-right: 1px solid #dadce0;"
+                onclick="window.location='{% url 'transmittals:detail' email.id %}'">
+                {{ email.sent_at|date:"M d, Y H:i" }}
+            </div>
+
+            <!-- Action Column -->
+            <div class="col-action"
+                style="text-align: center; padding: 8px; display: flex; align-items: center; justify-content: center; border-right: none;"
+                onclick="window.location='{% url 'transmittals:detail' email.id %}'">
+                {% if email.status == 'received' %}
+                <span
+                    style="font-size: 12px; color: #28A745; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-icons" style="font-size: 16px;">done_all</span>
+                    Completed
+                </span>
+                {% elif email.status == 'arrived' and folder == 'sent' %}
+                <span
+                    style="font-size: 12px; color: #1a73e8; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-icons" style="font-size: 16px;">inventory_2</span>
+                    Arrived
+                </span>
+                {% elif email.status == 'picked' %}
+                <span
+                    style="font-size: 12px; color: #6f42c1; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-icons" style="font-size: 16px;">back_hand</span>
+                    Picked Up
+                </span>
+                {% elif email.status == 'cancelled' %}
+                <span
+                    style="font-size: 12px; color: #DC3545; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-icons" style="font-size: 16px;">block</span>
+                    Cancelled
+                </span>
+                {% elif folder == 'inbox' %}
+                {% if email.status == 'in_transit' or email.status == 'arrived' or email.status == 'picked' %}
+                <a href="{% url 'transmittals:mark_received' email.id %}?quick=true" class="btn btn-sm"
+                    style="background-color: #28A745; border-color: #28A745; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-block; white-space: nowrap;"
+                    title="Mark as Received"
+                    onclick="event.stopPropagation(); return confirm('Mark this transmittal as Received?');">
+                    <span class="material-icons"
+                        style="font-size: 14px; vertical-align: middle; margin-right: 2px;">check_circle</span>
+                    Mark Received
+                </a>
+                {% else %}
+                <span style="font-size: 12px; color: #999;">-</span>
+                {% endif %}
+                {% elif folder == 'sent' and email.status == 'in_transit' %}
+                <a href="{% url 'transmittals:cancel_transmittal' email.id %}" class="btn btn-sm"
+                    style="background-color: #DC3545; border-color: #DC3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-block; white-space: nowrap;"
+                    title="Cancel Transmittal"
+                    onclick="event.stopPropagation(); return confirm('Are you sure you want to cancel this transmittal?');">
+                    <span class="material-icons"
+                        style="font-size: 14px; vertical-align: middle; margin-right: 2px;">cancel</span>
+                    Cancel
+                </a>
+                {% else %}
+                <span style="font-size: 12px; color: #999;">-</span>
+                {% endif %}
+            </div>
+
+            <!-- No more Resize Handle here - using Global Columns -->
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div style="text-align: center; padding: 48px; color: var(--gray-700);">
+        <div style="margin-bottom: 16px;">
+            <span class="material-icons" style="font-size: 64px; color: #dadce0;">
+                {% if folder == 'inbox' %}inbox{% else %}send{% endif %}
+            </span>
+        </div>
+        <div style="font-size: var(--subtitle-size); margin-bottom: 8px;">
+            {% if folder == 'inbox' %}
+            Your inbox is empty
+            {% else %}
+            No sent emails yet
+            {% endif %}
+        </div>
+        <div style="font-size: var(--body-size);">
+            {% if folder == 'inbox' %}
+            Transmittals sent to you will appear here.
+            {% else %}
+            Transmittals you send will appear here.
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // ============================================================
+    // SORTING DROPDOWN
+    // ============================================================
+    function toggleSortMenu(e) {
+        e.stopPropagation();
+        document.getElementById('sortMenu').classList.toggle('show');
+    }
+
+    function applySort(field) {
+        // When picking a new field, default to Ascending unless it's sent_at which usually defaults to Descending?
+        // Actually, let's just default to Ascending for consistency, or keep it simple.
+        // If the user clicks the field that is ALREADY selected, we toggle.
+
+        const currentSort = '{{ current_sort }}'; // e.g. '-sent_at' or 'description'
+        const currentField = currentSort.replace(/^-/, '');
+
+        if (currentField === field) {
+            // Toggle
+            toggleSortDirection();
+        } else {
+            // New field, default to Ascending (or specific defaults if needed)
+            location.href = '?sort=' + field;
+        }
+    }
+
+    function toggleSortDirection() {
+        const currentSort = '{{ current_sort }}';
+        let newSort = '';
+
+        if (currentSort.startsWith('-')) {
+            // Current is Descending -> Convert to Ascending
+            newSort = currentSort.substring(1);
+        } else {
+            // Current is Ascending -> Convert to Descending
+            newSort = '-' + currentSort;
+        }
+        location.href = '?sort=' + newSort;
+    }
+
+    // Handle Status Filter for Sent Folder
+    function handleStatusFilter(statusValue) {
+        if (statusValue) {
+            location.href = '?status=' + statusValue;
+        } else {
+            location.href = '?';
+        }
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.sort-dropdown-wrapper')) {
+            const menu = document.getElementById('sortMenu');
+            if (menu) menu.classList.remove('show');
+        }
+    });
+
+    // ============================================================
+    // COLUMN RESIZING (EXCEL LIKE)
+    // ============================================================
+    let isResizing = false;
+    let currentResizer = null;
+    let startX = 0;
+    let startWidth = 0;
+    let currentColName = '';
+
+    function startResizeCol(e, colName) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        isResizing = true;
+        currentResizer = e.target;
+        currentColName = colName;
+        startX = e.clientX;
+
+        // Get current width from CSS variable
+        const container = document.getElementById('inboxContainer');
+        const computedStyle = getComputedStyle(container);
+
+        // Note: For '1fr', we might need to compute the actual pixel width first
+        // If it's the first time and it's 1fr, we should probably set it to its current computed pixel width
+        // to start resize smoothly
+
+        let currentVar = computedStyle.getPropertyValue('--col-' + colName).trim();
+
+        // If it's a flexible unit (fr) or auto, resolve it to pixels for smooth dragging
+        if (currentVar.includes('fr') || currentVar === 'auto') {
+            const headerCol = document.querySelector(`.column-header[data-col="${colName}"]`);
+            startWidth = headerCol.offsetWidth;
+        } else {
+            startWidth = parseInt(currentVar);
+        }
+
+        currentResizer.classList.add('resizing');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        document.addEventListener('mousemove', handleResizeMove);
+        document.addEventListener('mouseup', stopResizeCol);
+    }
+
+    function handleResizeMove(e) {
+        if (!isResizing) return;
+
+        const delta = e.clientX - startX;
+        const newWidth = Math.max(80, startWidth + delta); // Min width 80px to match CSS
+
+        const container = document.getElementById('inboxContainer');
+        container.style.setProperty('--col-' + currentColName, newWidth + 'px');
+    }
+
+    function stopResizeCol() {
+        if (!isResizing) return;
+
+        isResizing = false;
+        if (currentResizer) currentResizer.classList.remove('resizing');
+        currentResizer = null;
+
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+
+        document.removeEventListener('mousemove', handleResizeMove);
+        document.removeEventListener('mouseup', stopResizeCol);
+    }
+
+    // ============================================================
+    // COLUMN REORDERING
+    // ============================================================
+    const COLUMN_ORDER_KEY = 'inboxColumnOrder_{{ folder }}';
+    const DEFAULT_COLUMNS = ['name', 'description', 'reference', 'time', 'action'];
+    let draggedColumn = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        const order = localStorage.getItem(COLUMN_ORDER_KEY);
+        if (order) {
+            reorderColumns(order.split(','));
+        }
+        setupDragAndDrop();
+    });
+
+    function getColumnOrder() {
+        const stored = localStorage.getItem(COLUMN_ORDER_KEY);
+        let order = stored ? stored.split(',') : DEFAULT_COLUMNS;
+        // Migration: Ensure all DEFAULT_COLUMNS are present in saved order
+        DEFAULT_COLUMNS.forEach(col => {
+            if (!order.includes(col)) order.push(col);
+        });
+        // Filtering: Remove columns no longer in DEFAULT_COLUMNS
+        return order.filter(col => DEFAULT_COLUMNS.includes(col));
+    }
+
+    function saveColumnOrder(order) {
+        localStorage.setItem(COLUMN_ORDER_KEY, order.join(','));
+    }
+
+    function reorderColumns(columnOrder) {
+        const container = document.getElementById('inboxContainer');
+
+        // Construct the new grid-template-areas or just reassign the CSS variables order?
+        // Actually, for grid-template-columns with specific variable names, we can't just shuffle variables easily 
+        // if they are bound to names in the DOM order. 
+        // In the CSS: grid-template-columns: var(--col-name) var(--col-desc) ... 
+        // If we reorder DOM elements, grid auto-placement works sequentially.
+        // So we MUST reorder the DOM nodes themselves.
+
+        const headerRow = document.getElementById('header-row');
+        const rows = document.querySelectorAll('.inbox-row');
+
+        // Reorder Header
+        // Sort children based on the order in columnOrder
+        const headers = Array.from(headerRow.children);
+
+        // Map DOM elements by their data-col attribute
+        const headerMap = {};
+        headers.forEach(h => { if (h.dataset.col) headerMap[h.dataset.col] = h; });
+
+        // Append in new order
+        columnOrder.forEach(colName => {
+            if (headerMap[colName]) headerRow.appendChild(headerMap[colName]);
+        });
+
+        // Reorder Rows
+        rows.forEach(row => {
+            const cells = Array.from(row.children);
+            // We need to identify cells. They have classes .col-name, .col-description etc.
+            const cellMap = {
+                'name': row.querySelector('.col-name'),
+                'description': row.querySelector('.col-description'),
+                'reference': row.querySelector('.col-reference'),
+                'time': row.querySelector('.col-time'),
+                'action': row.querySelector('.col-action')
+            };
+
+            columnOrder.forEach(colName => {
+                if (cellMap[colName]) row.appendChild(cellMap[colName]);
+            });
+        });
+
+        // Note: The CSS `grid-template-columns` is explicitly `var(--col-name) var(--col-desc)...`
+        // If we reorder the DOM, the first element (e.g. Time) will get the first width (Name, 200px). 
+        // This is WRONG.
+        // We MUST also reorder the CSS grid definition to match the new DOM order!
+        // We can do this by updating the inline style of the container or rows.
+
+        const newTemplate = columnOrder.map(col => `minmax(80px, var(--col-${col}))`).join(' ');
+
+        // Apply to header and all rows (via a shared class or injecting a style)
+        // Since we are using !important in CSS, we need to override it more specifically or update a style block.
+        // Easiest is to set a style on the elements directly.
+
+        headerRow.style.gridTemplateColumns = newTemplate;
+        rows.forEach(r => r.style.gridTemplateColumns = newTemplate);
+    }
+
+    // Drag and Drop Logic (simplified from previous)
+    function setupDragAndDrop() {
+        const handles = document.querySelectorAll('.drag-handle');
+        handles.forEach(h => {
+            h.addEventListener('dragstart', handleDragStart);
+            h.addEventListener('dragend', handleDragEnd);
+        });
+
+        const headers = document.querySelectorAll('.column-header');
+        headers.forEach(h => {
+            h.addEventListener('dragover', e => e.preventDefault());
+            h.addEventListener('drop', handleDrop);
+        });
+    }
+
+    function handleDragStart(e) {
+        const header = e.target.closest('.column-header');
+        draggedColumn = header.dataset.col;
+        e.dataTransfer.effectAllowed = 'move';
+        header.style.opacity = '0.5';
+    }
+
+    function handleDragEnd(e) {
+        e.target.closest('.column-header').style.opacity = '1';
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const header = e.target.closest('.column-header');
+        if (!header) return;
+
+        const targetCol = header.dataset.col;
+        if (targetCol === draggedColumn) return;
+
+        let order = getColumnOrder();
+        const fromIdx = order.indexOf(draggedColumn);
+        const toIdx = order.indexOf(targetCol);
+
+        if (fromIdx > -1 && toIdx > -1) {
+            order.splice(fromIdx, 1);
+            order.splice(toIdx, 0, draggedColumn);
+            saveColumnOrder(order);
+            reorderColumns(order);
+        }
+    }
+
+    // Date Filter Functions
+    function applyDateFilter(filterType) {
+        const currentUrl = new URL(window.location);
+        const dateFilter = document.getElementById('dateFilter');
+        const customDateRange = document.getElementById('customDateRange');
+
+        if (filterType === 'custom') {
+            customDateRange.style.display = 'flex';
+            return; // Don't apply yet, wait for "Apply" button
+        } else {
+            customDateRange.style.display = 'none';
+            currentUrl.searchParams.set('date_filter', filterType);
+            currentUrl.searchParams.delete('start_date');
+            currentUrl.searchParams.delete('end_date');
+            window.location = currentUrl.toString();
+        }
+    }
+
+    function applyCustomDateRange() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        if (!startDate || !endDate) {
+            alert('Please select both start and end dates');
+            return;
+        }
+
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('Start date must be before end date');
+            return;
+        }
+
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('date_filter', 'custom');
+        currentUrl.searchParams.set('start_date', startDate);
+        currentUrl.searchParams.set('end_date', endDate);
+        window.location = currentUrl.toString();
+    }
+
+</script>
+{% endblock %}

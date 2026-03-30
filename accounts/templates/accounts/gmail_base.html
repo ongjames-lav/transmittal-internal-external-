@@ -1,0 +1,1301 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Transmittal Report System{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/cdc-logo-round.png' %}">
+    <style>
+        /* ============================================
+           GMAIL-INSPIRED DESIGN SYSTEM
+           Principles: Hierarchy, Predictability, Low Cognitive Load
+           ============================================ */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Gmail Color Palette */
+            --gmail-blue: #1a73e8;
+            --gmail-blue-hover: #1765cc;
+            --gmail-red: #ea4335;
+            --gmail-green: #1e8e3e;
+            --gmail-yellow: #f9ab00;
+
+            --gray-900: #202124;
+            --gray-700: #5f6368;
+            --gray-200: #e8eaed;
+            --gray-100: #f1f3f4;
+            --border-gray: #dadce0;
+
+            --white: #ffffff;
+            --hover-bg: #f1f3f4;
+
+            /* Typography */
+            --font-family: 'Google Sans', 'Segoe UI', Arial, sans-serif;
+            --title-size: 22px;
+            --subtitle-size: 16px;
+            --body-size: 14px;
+            --small-size: 12px;
+        }
+
+        /* Material Icons */
+        @font-face {
+            font-family: 'Material Icons';
+            font-style: normal;
+            font-weight: 400;
+            src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
+        }
+
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .nav-icon.material-icons {
+            font-size: 20px;
+            width: 24px;
+            /* Give it a bit more space */
+            text-align: center;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        body {
+            font-family: var(--font-family);
+            font-size: var(--body-size);
+            color: var(--gray-900);
+            background: var(--white);
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           TOP APP BAR (Fixed Header)
+           ============================================ */
+
+        .gmail-topbar {
+            height: 64px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border-gray);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-right: 24px;
+            text-decoration: none;
+            color: var(--gray-700);
+            font-size: 24px;
+            font-weight: 400;
+        }
+
+        .topbar-logo:hover {
+            color: var(--gray-900);
+        }
+
+        .topbar-search {
+            flex: 1;
+            max-width: 720px;
+            margin-right: 24px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid var(--border-gray);
+            border-radius: 8px;
+            font-size: var(--body-size);
+            background: var(--gray-100);
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: var(--white);
+            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+        }
+
+        .topbar-utilities {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .utility-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+        .utility-icon:hover {
+            background: var(--hover-bg);
+        }
+
+        .user-avatar {
+            background: var(--gmail-blue);
+            color: var(--white);
+            font-weight: 500;
+        }
+
+        .user-avatar {
+            background: var(--gmail-blue);
+            color: var(--white);
+            font-weight: 500;
+        }
+
+        /* Search Suggestions */
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 720px;
+            margin-right: 24px;
+        }
+
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-gray);
+            border-top: none;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 0;
+        }
+
+        .search-suggestions.show {
+            display: block;
+        }
+
+        /* Active Search Input Style */
+        .search-input.active {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: transparent;
+            background: var(--white);
+            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+        }
+
+        .suggestion-item {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f3f4;
+            background: var(--white);
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f1f3f4;
+        }
+
+        .suggestion-icon {
+            margin-right: 12px;
+            color: var(--gray-700);
+            display: flex;
+            align-items: center;
+        }
+
+        .suggestion-content {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .suggestion-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #202124;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .suggestion-subtitle {
+            font-size: 12px;
+            color: var(--gray-700);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .suggestion-type {
+            font-size: 11px;
+            background: #e8eaed;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            color: #5f6368;
+        }
+
+        /* ============================================
+           SIDEBAR NAVIGATION
+           ============================================ */
+
+        .gmail-layout {
+            display: flex;
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
+        }
+
+        .gmail-sidebar {
+            width: 256px;
+            background: var(--white);
+            border-right: 1px solid var(--border-gray);
+            padding: 8px 0;
+            position: fixed;
+            left: 0;
+            top: 64px;
+            bottom: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-compose {
+            margin: 8px 16px 16px;
+        }
+
+        .compose-btn {
+            width: 100%;
+            padding: 12px 24px;
+            background: var(--white);
+            color: var(--gray-900);
+            border: 1px solid var(--border-gray);
+            border-radius: 24px;
+            font-size: var(--body-size);
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            text-decoration: none;
+            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+        }
+
+        .compose-btn:hover {
+            box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin: 2px 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 8px 12px 8px 24px;
+            color: var(--gray-900);
+            text-decoration: none;
+            border-radius: 0 20px 20px 0;
+            transition: background 0.2s;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: var(--hover-bg);
+        }
+
+        .nav-link.active {
+            background: #d3e3fd;
+            color: var(--gmail-blue);
+        }
+
+        .nav-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--gray-200);
+            color: var(--gray-700);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: var(--small-size);
+            font-weight: 600;
+        }
+
+        /* Sub-navigation items */
+        .nav-sub-item {
+            margin: 2px 8px 2px 0;
+            /* Align with parent margin but sub-container handles indent */
+        }
+
+        .nav-sub-container {
+            display: flex;
+            flex-direction: column;
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
+
+        .nav-sub-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 12px 6px 52px;
+            /* Indent to align with text of parent (24px padding + 20px icon + gap) approx */
+            color: var(--gray-700);
+            text-decoration: none;
+            border-radius: 0 20px 20px 0;
+            transition: background 0.2s;
+            font-size: 13px;
+            font-weight: 400;
+        }
+
+        .nav-sub-link:hover {
+            background: var(--hover-bg);
+            color: var(--gray-900);
+        }
+
+        .nav-sub-link.active {
+            background: #d3e3fd;
+            color: var(--gmail-blue);
+            font-weight: 600;
+        }
+
+        /* ============================================
+           MAIN CONTENT AREA
+           ============================================ */
+
+        .gmail-main {
+            flex: 1;
+            margin-left: 256px;
+            padding: 24px;
+            background: var(--white);
+        }
+
+        /* ============================================
+           INBOX VIEW (List of Items)
+           ============================================ */
+
+        .inbox-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .inbox-header {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-gray);
+            margin-bottom: 8px;
+        }
+
+        .inbox-header h1 {
+            font-size: var(--title-size);
+            font-weight: 400;
+            color: var(--gray-900);
+        }
+
+        .inbox-list {
+            list-style: none;
+        }
+
+        .inbox-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--gray-100);
+            cursor: pointer;
+            transition: background 0.1s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .inbox-row:hover {
+            background: var(--hover-bg);
+            box-shadow: inset 1px 0 0 var(--border-gray), inset -1px 0 0 var(--border-gray);
+        }
+
+        .inbox-checkbox {
+            margin-right: 16px;
+            cursor: pointer;
+        }
+
+        .inbox-star {
+            margin-right: 16px;
+            cursor: pointer;
+            color: var(--gray-700);
+            font-size: 20px;
+        }
+
+        .inbox-star:hover,
+        .inbox-star.starred {
+            color: var(--gmail-yellow);
+        }
+
+        .inbox-sender {
+            width: 180px;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .inbox-subject {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 16px;
+        }
+
+        .inbox-snippet {
+            color: var(--gray-700);
+            margin-left: 8px;
+        }
+
+        .inbox-date {
+            width: 100px;
+            text-align: right;
+            color: var(--gray-700);
+            font-size: var(--small-size);
+        }
+
+        .unread {
+            font-weight: 600;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: var(--small-size);
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .status-pending {
+            background: #fef7e0;
+            color: #b06000;
+        }
+
+        .status-approved {
+            background: #e6f4ea;
+            color: #137333;
+        }
+
+        .status-rejected {
+            background: #fce8e6;
+            color: #c5221f;
+        }
+
+        /* ============================================
+           DETAIL VIEW (Single Item Focus)
+           ============================================ */
+
+        .detail-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--white);
+        }
+
+        .detail-header {
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border-gray);
+        }
+
+        .detail-title {
+            font-size: var(--title-size);
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+
+        .detail-meta {
+            color: var(--gray-700);
+            font-size: var(--small-size);
+        }
+
+        .detail-body {
+            padding: 24px 0;
+        }
+
+        .detail-field {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .detail-label {
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        .detail-value {
+            color: var(--gray-900);
+        }
+
+        /* ============================================
+           BUTTONS (Gmail-Style)
+           ============================================ */
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: var(--body-size);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--gmail-blue);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--gmail-blue-hover);
+            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--gray-700);
+            border: 1px solid var(--border-gray);
+        }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg);
+        }
+
+        .btn-danger {
+            background: var(--gmail-red);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #d33426;
+        }
+
+        .btn-success {
+            background: var(--gmail-green);
+            color: var(--white);
+        }
+
+        .btn-success:hover {
+            background: #188038;
+        }
+
+        /* ============================================
+           SNACKBAR FEEDBACK
+           ============================================ */
+
+        .snackbar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #323232;
+            color: var(--white);
+            padding: 14px 24px;
+            border-radius: 4px;
+            font-size: var(--body-size);
+            box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2), 0 6px 10px 0 rgba(0, 0, 0, 0.14);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .snackbar.show {
+            opacity: 1;
+        }
+
+        /* ============================================
+           RESPONSIVE (Mobile)
+           ============================================ */
+
+        @media (max-width: 768px) {
+            .gmail-sidebar {
+                width: 256px;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+                box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+            }
+
+            .gmail-sidebar.sidebar-open {
+                transform: translateX(0);
+            }
+
+            .gmail-main {
+                margin-left: 0;
+            }
+
+            .nav-link span {
+                display: inline;
+                /* Show text in opened sidebar */
+            }
+
+            .nav-badge {
+                display: inline-block;
+                /* Show badge in opened sidebar */
+            }
+
+            /* Hide the sub-link text indentation if it was hidden, but in opened sidebar it should be visible */
+            .nav-sub-link span {
+                display: inline;
+            }
+
+            .topbar-search {
+                /* Make search full width or hide on very small screens if needed, 
+                   but for now just ensure it doesn't break layout */
+                display: none;
+                /* Hide search on mobile to save space, or make it an icon toggle */
+            }
+
+            .topbar-logo span {
+                display: none;
+                /* Hide app title on mobile */
+            }
+
+            .menu-toggle {
+                display: flex !important;
+            }
+
+            .inbox-sender {
+                width: 120px;
+            }
+
+            .inbox-snippet {
+                display: none;
+            }
+        }
+
+        /* Overlay for mobile sidebar */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Menu Toggle Button */
+        .menu-toggle {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+            cursor: pointer;
+            color: var(--gray-700);
+            transition: background 0.2s;
+        }
+
+        .menu-toggle:hover {
+            background: var(--hover-bg);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- TOP APP BAR -->
+    <div class="gmail-topbar">
+        <div class="menu-toggle" id="menuToggle">
+            <span class="material-icons">menu</span>
+        </div>
+
+        <a href="/" class="topbar-logo">
+            <img src="{% static 'images/cdc-logo.png' %}" alt="Logo"
+                style="height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 1px solid #dadce0;">
+            <span>Transmittal Report System</span>
+        </a>
+
+        <div class="search-container">
+            <input type="text" class="search-input" id="globalSearchInput" placeholder="Search Transmittal"
+                autocomplete="off">
+            <div class="search-suggestions" id="searchSuggestions"></div>
+        </div>
+
+        <div class="topbar-utilities">
+            {% if user.is_authenticated %}
+            <div style="margin-right: 12px; font-weight: 500; font-size: 14px; color: var(--gray-700);">
+                {{ user.profile.get_full_name }}
+            </div>
+            <div class="utility-icon user-avatar" title="{{ user.profile.get_full_name }}"
+                style="overflow: hidden; {% if user.profile.avatar %}background: none;{% endif %}">
+                {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" alt="Avatar"
+                    style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                {{ user.profile.get_full_name.0|upper }}
+                {% endif %}
+            </div>
+            <a href="{% url 'accounts:logout' %}" class="utility-icon" title="Logout"
+                style="margin-left: 12px; background-color: transparent; border-radius: 4px; padding: 8px 12px; text-decoration: none; color: #333; font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                <span class="material-icons" style="font-size: 18px;">logout</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="gmail-layout">
+        <!-- SIDEBAR NAVIGATION -->
+        {% if user.is_authenticated %}
+
+        <!-- Custodian Sidebar -->
+        {% if user.profile.role == 'custodian' %}
+        <nav class="gmail-sidebar">
+            <div class="sidebar-compose">
+                <a href="{% url 'transmittals:create_transmittal' %}" class="compose-btn">
+                    <span class="material-icons">edit</span>
+                    <span>New Transmittal</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:custodian_dashboard' %}"
+                        class="nav-link {% if '/custodian/dashboard/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- In Transit -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:custodian_in_transit' %}"
+                        class="nav-link {% if '/custodian/in-transit/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">local_shipping</span>
+                        <span>In Transit</span>
+                    </a>
+                </li>
+
+                <!-- Arrived -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:custodian_arrived' %}"
+                        class="nav-link {% if '/custodian/arrived/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">inventory_2</span>
+                        <span>Arrived</span>
+                    </a>
+                </li>
+
+                <!-- Picked -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:custodian_picked' %}"
+                        class="nav-link {% if '/custodian/picked/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">back_hand</span>
+                        <span>Picked Up</span>
+                    </a>
+                </li>
+
+                <!-- Received -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:custodian_received' %}"
+                        class="nav-link {% if '/custodian/received/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">check_circle</span>
+                        <span>Received</span>
+                    </a>
+                </li>
+
+                <!-- Outgoing -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:custodian_outgoing' %}"
+                        class="nav-link {% if '/custodian/outgoing/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">send</span>
+                        <span>Outgoing</span>
+                    </a>
+                </li>
+
+                <!-- Export to Excel -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:custodian_export_received' %}"
+                        class="nav-link {% if '/custodian/export-received/' in request.path %}active{% endif %}"
+                        title="Download received transmittals as Excel">
+                        <span class="material-icons nav-icon">download</span>
+                        <span>Export to Excel</span>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{% url 'accounts:logout' %}" class="nav-link">
+                        <span class="material-icons nav-icon">logout</span>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Regular User Sidebar -->
+        {% else %}
+        <nav class="gmail-sidebar">
+            <div class="sidebar-compose">
+                {% if user.is_staff or user.profile.status == 'approved' %}
+                <a href="{% url 'transmittals:create_transmittal' %}" class="compose-btn">
+                    <span class="material-icons">edit</span>
+                    <span>New Transmittal</span>
+                </a>
+                {% endif %}
+            </div>
+
+            <ul class="sidebar-nav">
+                {% if user.is_staff %}
+                <!-- Admin Navigation -->
+                <li class="nav-item">
+                    <a href="{% url 'accounts:dashboard' %}"
+                        class="nav-link {% if request.path == '/accounts/dashboard/' %}active{% endif %}">
+                        <span class="material-icons nav-icon">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'accounts:admin_dashboard' %}"
+                        class="nav-link {% if request.path == '/accounts/admin/dashboard/' and not request.GET.status %}active{% endif %}">
+                        <span class="material-icons nav-icon">people</span>
+                        <span>User Requests</span>
+                        <span class="nav-badge">{{ stats.total }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:inbox' %}"
+                        class="nav-link {% if '/transmittals/inbox/' in request.path and not request.GET.status %}active{% endif %}">
+                        <span class="material-icons nav-icon">inbox</span>
+                        <span>Incoming</span>
+                    </a>
+                    <!-- Inbox Subsections -->
+                    <div class="nav-sub-container">
+                        <a href="{% url 'transmittals:inbox' %}?status=arrived"
+                            class="nav-sub-link {% if request.GET.status == 'arrived' %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">inventory_2</span>
+                            <span>Arrived</span>
+                        </a>
+                        <a href="{% url 'transmittals:inbox' %}?status=picked"
+                            class="nav-sub-link {% if request.GET.status == 'picked' %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">back_hand</span>
+                            <span>Picked Up</span>
+                        </a>
+                        <a href="{% url 'transmittals:inbox' %}?status=received"
+                            class="nav-sub-link {% if request.GET.status == 'received' %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">check_circle</span>
+                            <span>Received</span>
+                        </a>
+                        <a href="{% url 'transmittals:inbox' %}?status=cancelled"
+                            class="nav-sub-link {% if request.GET.status == 'cancelled' and '/transmittals/inbox/' in request.path %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">cancel</span>
+                            <span>Cancelled by Sender</span>
+                        </a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:sent_emails' %}"
+                        class="nav-link {% if '/transmittals/sent/' in request.path and not request.GET.status %}active{% endif %}">
+                        <span class="material-icons nav-icon">send</span>
+                        <span>Outgoing</span>
+                    </a>
+                    <!-- Sent Subsections -->
+                    <div class="nav-sub-container">
+                        <a href="{% url 'transmittals:sent_emails' %}?status=cancelled"
+                            class="nav-sub-link {% if request.GET.status == 'cancelled' and '/transmittals/sent/' in request.path %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">cancel</span>
+                            <span>Cancelled</span>
+                        </a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'accounts:admin_dashboard' %}?status=pending" class="nav-link">
+                        <span class="material-icons nav-icon">hourglass_empty</span>
+                        <span>Pending</span>
+                        <span class="nav-badge">{{ stats.pending }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'accounts:admin_dashboard' %}?status=approved" class="nav-link">
+                        <span class="material-icons nav-icon">check_circle</span>
+                        <span>Approved</span>
+                        <span class="nav-badge">{{ stats.approved }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'accounts:admin_dashboard' %}?status=rejected" class="nav-link">
+                        <span class="material-icons nav-icon">cancel</span>
+                        <span>Rejected</span>
+                        <span class="nav-badge">{{ stats.rejected }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'accounts:user_activity_logs' %}"
+                        class="nav-link {% if '/accounts/admin/activity-logs/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">history</span>
+                        <span>Activity Logs</span>
+                    </a>
+                </li>
+
+                <!-- External Transmittals Section (Admin & Users) -->
+                <li class="nav-item" style="margin-top: 16px; border-top: 1px solid #dadce0; padding-top: 8px;">
+                    <a href="{% url 'transmittals:external_dashboard' %}"
+                        class="nav-link {% if '/transmittals/external/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">public</span>
+                        <span>External Transmittals</span>
+                    </a>
+                </li>
+                {% else %}
+                <!-- User Navigation -->
+                <li class="nav-item">
+                    <a href="{% url 'accounts:dashboard' %}"
+                        class="nav-link {% if request.path == '/accounts/dashboard/' %}active{% endif %}">
+                        <span class="material-icons nav-icon">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:inbox' %}"
+                        class="nav-link {% if '/transmittals/inbox/' in request.path and not request.GET.status %}active{% endif %}">
+                        <span class="material-icons nav-icon">inbox</span>
+                        <span>Incoming</span>
+                    </a>
+                    <!-- Inbox Subsections -->
+                    <div class="nav-sub-container">
+                        <a href="{% url 'transmittals:inbox' %}?status=arrived"
+                            class="nav-sub-link {% if request.GET.status == 'arrived' %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">inventory_2</span>
+                            <span>Arrived</span>
+                        </a>
+                        <a href="{% url 'transmittals:inbox' %}?status=picked"
+                            class="nav-sub-link {% if request.GET.status == 'picked' %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">back_hand</span>
+                            <span>Picked Up</span>
+                        </a>
+                        <a href="{% url 'transmittals:inbox' %}?status=received"
+                            class="nav-sub-link {% if request.GET.status == 'received' %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">check_circle</span>
+                            <span>Received</span>
+                        </a>
+                        <a href="{% url 'transmittals:inbox' %}?status=cancelled"
+                            class="nav-sub-link {% if request.GET.status == 'cancelled' and '/transmittals/inbox/' in request.path %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">cancel</span>
+                            <span>Cancelled by Sender</span>
+                        </a>
+                    </div>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:sent_emails' %}"
+                        class="nav-link {% if '/transmittals/sent/' in request.path and not request.GET.status %}active{% endif %}">
+                        <span class="material-icons nav-icon">send</span>
+                        <span>Outgoing</span>
+                    </a>
+                    <!-- Sent Subsections -->
+                    <div class="nav-sub-container">
+                        <a href="{% url 'transmittals:sent_emails' %}?status=cancelled"
+                            class="nav-sub-link {% if request.GET.status == 'cancelled' and '/transmittals/sent/' in request.path %}active{% endif %}">
+                            <span class="material-icons nav-icon"
+                                style="font-size: 18px; margin-right: 8px;">cancel</span>
+                            <span>Cancelled</span>
+                        </a>
+                    </div>
+                </li>
+
+                <!-- External Transmittals Section -->
+                <li class="nav-item" style="margin-top: 16px; border-top: 1px solid #dadce0; padding-top: 8px;">
+                    <a href="{% url 'transmittals:external_dashboard' %}"
+                        class="nav-link {% if '/transmittals/external/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">public</span>
+                        <span>External Transmittals</span>
+                    </a>
+                </li>
+
+                <!-- Reports & Analytics (User & Admin) -->
+                <li class="nav-item" style="margin-top: 16px; border-top: 1px solid #dadce0; padding-top: 8px;">
+                    <a href="{% url 'transmittals:user_report' %}"
+                        class="nav-link {% if '/transmittals/report/' in request.path %}active{% endif %}">
+                        <span class="material-icons nav-icon">assessment</span>
+                        <span>Reports</span>
+                    </a>
+                </li>
+
+                {% endif %}
+                <li class="nav-item" style="margin-top: 16px; border-top: 1px solid #dadce0; padding-top: 8px;">
+                    <a href="{% url 'accounts:logout' %}" class="nav-link">
+                        <span class="material-icons nav-icon">logout</span>
+                        <span>Logout</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:flow_info' %}" class="nav-link">
+                        <span class="material-icons nav-icon">info</span>
+                        <span>Know More</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        {% endif %}
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="gmail-main">
+            <!-- Messages/Feedback -->
+            {% if messages %}
+            {% for message in messages %}
+            <div class="snackbar show" id="snackbar-{{ forloop.counter }}">
+                {{ message }}
+            </div>
+            <script>
+                setTimeout(() => {
+                    document.getElementById('snackbar-{{ forloop.counter }}').classList.remove('show');
+                }, 3000);
+            </script>
+            {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('globalSearchInput');
+            const suggestionsBox = document.getElementById('searchSuggestions');
+            let debounceTimer;
+
+            searchInput.addEventListener('input', function () {
+                const query = this.value.trim();
+                clearTimeout(debounceTimer);
+
+                if (query.length < 2) {
+                    suggestionsBox.classList.remove('show');
+                    searchInput.classList.remove('active');
+                    suggestionsBox.innerHTML = '';
+                    return;
+                }
+
+                debounceTimer = setTimeout(() => {
+                    fetchSuggestions(query);
+                }, 300);
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                    suggestionsBox.classList.remove('show');
+                }
+            });
+
+            // Show suggestions again if focused and has content
+            searchInput.addEventListener('focus', function () {
+                if (this.value.trim().length >= 2) {
+                    // Re-run search or just show simplified results?
+                    // Let's re-run fetch to be safe/fresh
+                    fetchSuggestions(this.value.trim());
+                }
+            });
+
+            async function fetchSuggestions(query) {
+                try {
+                    const response = await fetch(`/transmittals/api/search/suggestions/?q=${encodeURIComponent(query)}`);
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+                    renderSuggestions(data.results);
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }
+
+            function renderSuggestions(results) {
+                if (!results || results.length === 0) {
+                    suggestionsBox.classList.remove('show');
+                    searchInput.classList.remove('active');
+                    return;
+                }
+
+                let html = '';
+                results.forEach(item => {
+                    let icon = 'email'; // default
+                    if (item.type === 'Reference') icon = 'confirmation_number';
+                    else if (item.type === 'Person') icon = 'person';
+                    else if (item.type === 'Description') icon = 'description';
+
+                    html += `
+                        <div class="suggestion-item" onclick="window.location.href='/transmittals/detail/${item.id}/'">
+                            <div class="suggestion-icon">
+                                <span class="material-icons" style="font-size: 20px;">${icon}</span>
+                            </div>
+                            <div class="suggestion-content">
+                                <div class="suggestion-title">
+                                    ${escapeHtml(item.title)}
+                                    <span class="suggestion-type">${item.type}</span>
+                                </div>
+                                <div class="suggestion-subtitle">${escapeHtml(item.subtitle)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                suggestionsBox.innerHTML = html;
+                suggestionsBox.classList.add('show');
+                searchInput.classList.add('active');
+            }
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        });
+
+        // Sidebar Toggle Script
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.querySelector('.gmail-sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const mainContent = document.querySelector('.gmail-main');
+
+            // Toggle sidebar function
+            function toggleSidebar() {
+                sidebar.classList.toggle('sidebar-open');
+                overlay.classList.toggle('show');
+                document.body.style.overflow = sidebar.classList.contains('sidebar-open') ? 'hidden' : '';
+            }
+
+            // Close sidebar function
+            function closeSidebar() {
+                sidebar.classList.remove('sidebar-open');
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+
+            if (menuToggle) {
+                menuToggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    toggleSidebar();
+                });
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', closeSidebar);
+            }
+
+            // Handle window resize
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) {
+                    closeSidebar();
+                }
+            });
+
+            // Close sidebar when clicking a link (optional, for better mobile UX)
+            const sidebarLinks = document.querySelectorAll('.nav-link, .nav-sub-link');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function () {
+                    if (window.innerWidth <= 768) {
+                        closeSidebar();
+                    }
+                });
+            });
+        });
+    </script>
+    <!-- Session Timeout Script -->
+    {% if user.is_authenticated %}
+    <script>
+        (function () {
+            // 15 minutes in milliseconds
+            const SESSION_TIMEOUT = 900000;
+            const ACTIVITY_KEY = 'sessionLastActivity';
+
+            function updateActivity() {
+                localStorage.setItem(ACTIVITY_KEY, Date.now());
+            }
+
+            // Initialize if not set
+            if (!localStorage.getItem(ACTIVITY_KEY)) {
+                updateActivity();
+            }
+
+            // Listen for activity
+            const events = ['mousemove', 'click', 'keypress', 'scroll', 'touchstart'];
+            events.forEach(event => {
+                window.addEventListener(event, updateActivity, { passive: true });
+            });
+
+            // Check every 10 seconds
+            setInterval(function () {
+                const lastActivity = parseInt(localStorage.getItem(ACTIVITY_KEY) || Date.now());
+                if (Date.now() - lastActivity > SESSION_TIMEOUT) {
+                    // Redirect to logout which then redirects to login
+                    window.location.href = "{% url 'accounts:logout' %}";
+                }
+            }, 10000);
+        })();
+    </script>
+    {% endif %}
+</body>
+
+</html>

@@ -1,0 +1,162 @@
+.activity-container {
+    padding: 20px;
+    margin-top: 64px;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 30px;
+    color: #202124;
+}
+
+.section {
+    margin-bottom: 40px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #202124;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #dadce0;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-item {
+    background: white;
+    padding: 15px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a73e8;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #5f6368;
+    margin-top: 5px;
+}
+
+/* Grid Layouts */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.grid-card {
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 15px;
+    transition: all 0.2s ease;
+}
+
+.grid-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.grid-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f4;
+    font-size: 13px;
+}
+
+.grid-row:last-child {
+    border-bottom: none;
+}
+
+.grid-label {
+    font-weight: 600;
+    color: #5f6368;
+    min-width: 120px;
+}
+
+.grid-value {
+    color: #202124;
+    text-align: right;
+    flex: 1;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-login {
+    background: #e6f4ea;
+    color: #137333;
+}
+
+.badge-logout {
+    background: #fce8e6;
+    color: #c5221f;
+}
+
+.badge-online {
+    background: #e6f4ea;
+    color: #137333;
+}
+
+.badge-offline {
+    background: #fce8e6;
+    color: #c5221f;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #5f6368;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #202124;
+}
+
+.user-username {
+    font-size: 12px;
+    color: #5f6368;
+}
+
+@media (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+
+    .grid-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .grid-label {
+        min-width: auto;
+    }
+
+    .grid-value {
+        text-align: left;
+    }
+}

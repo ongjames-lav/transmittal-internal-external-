@@ -1,0 +1,969 @@
+{% extends 'transmittals/external_base.html' %}
+{% load static %}
+
+{% block title %}External Transmittal Inbox | Transmittal System{% endblock %}
+
+{# ── Inject count badge next to "Received" in the base sidebar ── #}
+{% block sidebar_received_count %}
+{% if count_all %}<span class="nav-count">{{ count_all }}</span>{% endif %}
+{% endblock %}
+
+
+
+
+{% block extra_head %}
+<style>
+    /* Override gmail-main padding so the inbox fills edge-to-edge */
+    .gmail-main {
+        padding: 0 !important;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* =========================================================
+       INBOX HEADER
+    ========================================================= */
+    .inbox-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #dadce0;
+        position: relative;
+        padding-right: 220px;
+        background: #fff;
+    }
+
+    .inbox-header h1 {
+        font-size: 20px;
+        font-weight: 400;
+        margin: 0;
+        color: #202124;
+    }
+
+    /* =========================================================
+       SORT CONTROLS
+    ========================================================= */
+    .sort-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .sort-dropdown-wrapper {
+        position: relative;
+    }
+
+    .sort-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border: 1px solid #dadce0;
+        border-radius: 20px;
+        background: #fff;
+        color: #202124;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .sort-btn:hover {
+        background: #f8f9fa;
+    }
+
+    .sort-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        background: #fff;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        min-width: 200px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+        z-index: 200;
+        display: none;
+    }
+
+    .sort-menu.active {
+        display: block;
+    }
+
+    .sort-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 11px 16px;
+        border: none;
+        background: #fff;
+        color: #202124;
+        font-size: 13px;
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.15s;
+    }
+
+    .sort-item:first-child {
+        border-radius: 8px 8px 0 0;
+    }
+
+    .sort-item:last-child {
+        border-radius: 0 0 8px 8px;
+    }
+
+    .sort-item:hover {
+        background: #f8f9fa;
+    }
+
+    .sort-item.active {
+        background: #e8f0fe;
+        color: #1a73e8;
+    }
+
+    .check-icon {
+        display: none;
+        color: #1a73e8;
+        font-weight: 600;
+    }
+
+    .sort-item.active .check-icon {
+        display: inline;
+    }
+
+    .sort-direction-btn {
+        padding: 7px 10px;
+        border: 1px solid #dadce0;
+        border-radius: 20px;
+        background: #fff;
+        color: #202124;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+    }
+
+    .sort-direction-btn:hover {
+        background: #f8f9fa;
+    }
+
+    .sort-direction-btn.ascending .material-icons {
+        transform: rotate(180deg);
+    }
+
+    /* =========================================================
+       COLUMN HEADERS
+    ========================================================= */
+    #header-row {
+        display: flex;
+        align-items: stretch;
+        padding: 0;
+        border-bottom: 2px solid #dadce0;
+        background: #f8f9fa;
+        color: #5f6368;
+    }
+
+    .column-header {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #5f6368;
+        user-select: none;
+        gap: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        font-size: 14px;
+        color: #bdc1c6;
+        flex-shrink: 0;
+        padding: 0 4px;
+        user-select: none;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .column-header.dragging {
+        opacity: 0.5;
+        background: #e8f0fe;
+    }
+
+    .column-header.drag-over {
+        border-left: 3px solid #1a73e8 !important;
+    }
+
+    .header-text {
+        flex: 1;
+    }
+
+    .sort-indicator {
+        font-size: 12px;
+        color: #1a73e8;
+    }
+
+    .col-resizer {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        cursor: col-resize;
+        background: transparent;
+    }
+
+    .col-resizer:hover {
+        background: #c0c0c0;
+    }
+
+    /* Column widths shared by header and rows */
+    .col-reference {
+        width: 130px;
+        border-right: 1px solid #dadce0;
+        flex-shrink: 0;
+    }
+
+    .col-recipient-name {
+        width: 140px;
+        border-right: 1px solid #dadce0;
+        flex-shrink: 0;
+    }
+
+    .col-company-name {
+        width: 150px;
+        border-right: 1px solid #dadce0;
+        flex-shrink: 0;
+    }
+
+    .col-main-type {
+        width: 90px;
+        border-right: 1px solid #dadce0;
+        flex-shrink: 0;
+        justify-content: center;
+    }
+
+    .col-sub-type {
+        width: 110px;
+        border-right: 1px solid #dadce0;
+        flex-shrink: 0;
+        justify-content: center;
+    }
+
+    .col-description {
+        width: 160px;
+        border-right: 1px solid #dadce0;
+        flex-shrink: 0;
+    }
+
+    .col-remarks {
+        width: 140px;
+        border-right: 1px solid #dadce0;
+        flex-shrink: 0;
+    }
+
+    .col-created {
+        width: 140px;
+        border-right: 1px solid #dadce0;
+        flex-shrink: 0;
+        justify-content: center;
+    }
+
+    .col-deadline {
+        width: 130px;
+        border-right: 1px solid #dadce0;
+        flex-shrink: 0;
+        justify-content: center;
+    }
+
+    .col-received-status {
+        width: 120px;
+        flex-shrink: 0;
+        justify-content: center;
+    }
+
+    /* =========================================================
+       INBOX ROWS
+    ========================================================= */
+    .inbox-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        flex: 1;
+    }
+
+    .inbox-row {
+        display: flex;
+        align-items: stretch;
+        padding: 0;
+        border-bottom: 1px solid #dadce0;
+        list-style: none;
+        position: relative;
+        overflow: visible;
+        cursor: pointer;
+        transition: box-shadow 0.1s;
+        background: rgba(242, 245, 245, 0.8);
+    }
+
+    .inbox-row:hover {
+        box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0,
+            0 1px 2px rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+        z-index: 1;
+    }
+
+    .inbox-row>div {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 12px 8px;
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+        color: #202124;
+    }
+
+    .inbox-row .col-reference {
+        font-weight: 500;
+        color: #00703c;
+    }
+
+    .inbox-row .col-recipient {
+        font-weight: 500;
+    }
+
+    .inbox-row .col-type,
+    .inbox-row .col-status,
+    .inbox-row .col-subtype,
+    .inbox-row .col-return,
+    .inbox-row .col-deadline,
+    .inbox-row .col-created {
+        justify-content: center;
+    }
+
+    /* =========================================================
+       TYPE & STATUS BADGES
+    ========================================================= */
+    .type-badge-mini {
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .badge-keep-mini {
+        background: #e6f4ea;
+        color: #137333;
+    }
+
+    .badge-return-mini {
+        background: #fce8e6;
+        color: #c5221f;
+    }
+
+    .status-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 11px;
+        padding: 2px 7px;
+        border-radius: 12px;
+        font-weight: 500;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .stag-transit {
+        background: #e8f0fe;
+        color: #1a73e8;
+    }
+
+    .stag-received {
+        background: #e6f4ea;
+        color: #137333;
+    }
+
+    .stag-open {
+        background: #fff3e0;
+        color: #e37400;
+    }
+
+    .stag-closed {
+        background: #e8eaed;
+        color: #3c4043;
+    }
+
+    .stag-cancelled {
+        background: #fce8e6;
+        color: #c5221f;
+    }
+
+    .stag-partial {
+        background: #fce8e6;
+        color: #c5221f;
+    }
+
+    .stag-paid {
+        background: #e8d5f7;
+        color: #7b1fa2;
+    }
+
+    .stag-keep {
+        background: #e6f4ea;
+        color: #137333;
+    }
+
+    /* =========================================================
+       TYPE FILTER SECTION
+    ========================================================= */
+    .filter-section {
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dadce0;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #5f6368;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+        background: white;
+        border-color: #8a7cc4;
+        color: #8a7cc4;
+    }
+
+    .filter-btn.active {
+        background: #8a7cc4;
+        color: white;
+        border-color: #8a7cc4;
+    }
+
+    .filter-btn .material-icons {
+        font-size: 18px;
+    }
+
+    @media (max-width: 600px) {
+        .filter-buttons {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .filter-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .filter-section {
+            flex-direction: column;
+        }
+    }
+
+    /* =========================================================
+       EMPTY STATE
+    ========================================================= */
+    .empty-state {
+        padding: 80px 20px;
+        text-align: center;
+    }
+
+    .empty-state-icon {
+        font-size: 64px;
+        color: #dadce0;
+        margin-bottom: 16px;
+    }
+
+    .empty-state-title {
+        font-size: 18px;
+        color: #5f6368;
+        margin-bottom: 8px;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+    @media (max-width: 680px) {
+
+        .col-reference,
+        .inbox-row .col-reference,
+        .col-time,
+        .inbox-row .col-time {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- INBOX HEADER -->
+<div class="inbox-header">
+    <h1>
+        {% if active_section == 'in_transit' %}In Transit
+        {% elif active_section == 'received' %}Outgoing
+        {% elif active_section == 'closed' %}Outgoing › Closed
+        {% elif active_section == 'open' %}Outgoing › Open
+        {% elif active_section == 'partial' %}Outgoing › Open › Partial
+        {% elif active_section == 'for_keep_sub' %}Outgoing › Closed › Return/For Keep
+        {% elif active_section == 'paid_sample' %}Outgoing › Closed › Return/Paid Sample
+        {% elif active_section == 'full_return' %}Outgoingd › Closed › Full Return
+        {% elif main_type == 'for_keep' and receive_status == 'closed' %}Outgoing › Closed › For Keep
+        {% else %}All External Transmittals
+        {% endif %}
+    </h1>
+
+    <!-- Sort Controls -->
+    <div class="sort-controls">
+        <div class="sort-dropdown-wrapper">
+            <button class="sort-btn" id="sortBtn" onclick="toggleSortMenu(event)">
+                <span class="material-icons" style="font-size:18px;">sort</span>
+                <span id="currentSortLabel">Sort by</span>
+                <span class="material-icons" style="font-size:15px;">arrow_drop_down</span>
+            </button>
+            <div class="sort-menu" id="sortMenu">
+                <button class="sort-item" onclick="applySort('reference_number','Reference No.',this)">
+                    Reference No. <span class="check-icon">✓</span>
+                </button>
+                <button class="sort-item" onclick="applySort('recipient_name','Recipient Name',this)">
+                    Recipient Name <span class="check-icon">✓</span>
+                </button>
+                <button class="sort-item" onclick="applySort('company_name','Company Name',this)">
+                    Company Name <span class="check-icon">✓</span>
+                </button>
+                <button class="sort-item" onclick="applySort('main_type','Main Type',this)">
+                    Main Type <span class="check-icon">✓</span>
+                </button>
+                <button class="sort-item" onclick="applySort('sub_type','Sub Type',this)">
+                    Sub Type <span class="check-icon">✓</span>
+                </button>
+                <button class="sort-item" onclick="applySort('description','Description',this)">
+                    Description <span class="check-icon">✓</span>
+                </button>
+                <button class="sort-item" onclick="applySort('remarks','Remarks',this)">
+                    Remarks <span class="check-icon">✓</span>
+                </button>
+                <button class="sort-item active" onclick="applySort('created_at','Created At',this)">
+                    Created At <span class="check-icon">✓</span>
+                </button>
+                <button class="sort-item" onclick="applySort('date_deadline','Deadline Date',this)">
+                    Deadline Date <span class="check-icon">✓</span>
+                </button>
+                <button class="sort-item" onclick="applySort('received_status','Received Status',this)">
+                    Received Status <span class="check-icon">✓</span>
+                </button>
+            </div>
+        </div>
+        <button class="sort-direction-btn" id="sortDirBtn" onclick="toggleSortDirection()"
+            title="Toggle sort direction">
+            <span class="material-icons">arrow_downward</span>
+        </button>
+    </div>
+</div>
+
+<!-- TYPE FILTER SECTION -->
+<div class="filter-section">
+    <div class="filter-buttons">
+        <a href="?status=received" 
+           class="filter-btn {% if not request.GET.main_type %}active{% endif %}">
+            <span class="material-icons">tune</span>
+            All Types
+        </a>
+        
+        <a href="?status=received&main_type=for_return" 
+           class="filter-btn {% if request.GET.main_type == 'for_return' %}active{% endif %}">
+            <span class="material-icons">assignment_return</span>
+            For Return
+        </a>
+        
+        <a href="?status=received&main_type=for_keep" 
+           class="filter-btn {% if request.GET.main_type == 'for_keep' %}active{% endif %}">
+            <span class="material-icons">save_as</span>
+            For Keep
+        </a>
+    </div>
+</div>
+
+<!-- COLUMN HEADER ROW -->
+<div id="header-row">
+
+    <div id="col-reference" class="column-header col-reference" style="position:relative;" data-col="reference">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Reference No.</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'reference')"></div>
+    </div>
+
+    <div id="col-recipient-name" class="column-header col-recipient-name" style="position:relative;" data-col="recipient-name">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Recipient Name</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'recipient-name')"></div>
+    </div>
+
+    <div id="col-company-name" class="column-header col-company-name" style="position:relative;" data-col="company-name">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Company Name</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'company-name')"></div>
+    </div>
+
+    <div id="col-main-type" class="column-header col-main-type" style="position:relative;" data-col="main-type">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Main Type</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'main-type')"></div>
+    </div>
+
+    <div id="col-sub-type" class="column-header col-sub-type" style="position:relative;" data-col="sub-type">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Sub Type</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'sub-type')"></div>
+    </div>
+
+    <div id="col-description" class="column-header col-description" style="position:relative;" data-col="description">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Description</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'description')"></div>
+    </div>
+
+    <div id="col-remarks" class="column-header col-remarks" style="position:relative;" data-col="remarks">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Remarks</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'remarks')"></div>
+    </div>
+
+    <div id="col-created" class="column-header col-created" style="position:relative;" data-col="created">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Created At</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'created')"></div>
+    </div>
+
+    <div id="col-deadline" class="column-header col-deadline" style="position:relative;" data-col="deadline">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Deadline Date</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'deadline')"></div>
+    </div>
+
+    <div id="col-received-status" class="column-header col-received-status" style="position:relative;" data-col="received-status">
+        <span class="drag-handle" draggable="true">⋮⋮</span>
+        <span class="header-text">Received Status</span>
+        <div class="col-resizer" onmousedown="startResizeCol(event,'received-status')"></div>
+    </div>
+
+</div>
+
+<!-- TRANSMITTAL ROWS -->
+<ul class="inbox-list" id="inbox-list">
+    {% if transmittals %}
+    {% for transmittal in transmittals %}
+    <li class="inbox-row">
+
+        <!-- Reference No. -->
+        <div class="col-reference" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            {{ transmittal.reference_number }}
+        </div>
+
+        <!-- Recipient Name -->
+        <div class="col-recipient-name" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            <span title="{{ transmittal.recipient_name }}">
+                {% if "," in transmittal.recipient_name %}
+                    Multiple Recipients
+                {% else %}
+                    {{ transmittal.recipient_name }}
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- Company Name -->
+        <div class="col-company-name" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            <span title="{{ transmittal.recipient_company_name }}">{{ transmittal.recipient_company_name|default:"-" }}</span>
+        </div>
+
+        <!-- Main Type -->
+        <div class="col-main-type" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            {% if transmittal.main_type == 'for_keep' %}
+            <span class="status-tag stag-keep">Keep</span>
+            {% elif transmittal.main_type == 'for_return' %}
+            <span class="status-tag stag-partial">Return</span>
+            {% else %}
+            <span style="color:#bdc1c6; font-size:11px;">-</span>
+            {% endif %}
+        </div>
+
+        <!-- Sub Type -->
+        <div class="col-sub-type" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            {% if transmittal.sub_type == 'partial' %}
+            <span class="status-tag stag-partial">Partial</span>
+            {% elif transmittal.sub_type == 'for_sample' %}
+            <span class="status-tag stag-paid">Paid Sample</span>
+            {% elif transmittal.sub_type == 'for_keep' %}
+            <span class="status-tag stag-keep">For Keep</span>
+            {% elif transmittal.sub_type == 'full' %}
+            <span class="status-tag stag-closed">Full Return</span>
+            {% else %}
+            <span style="color:#bdc1c6; font-size:11px;">Not set</span>
+            {% endif %}
+        </div>
+
+        <!-- Description -->
+        <div class="col-description" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            <span title="{{ transmittal.description }}">{{ transmittal.description|truncatewords:5|default:"-" }}</span>
+        </div>
+
+        <!-- Remarks -->
+        <div class="col-remarks" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            <span title="{{ transmittal.remarks }}">{{ transmittal.remarks|truncatewords:5|default:"-" }}</span>
+        </div>
+
+        <!-- Created At -->
+        <div class="col-created" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            {{ transmittal.created_at|date:"M d, Y g:i a"|default:"-" }}
+        </div>
+
+        <!-- Deadline Date -->
+        <div class="col-deadline" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            {{ transmittal.date_deadline|date:"M d, Y"|default:"-" }}
+        </div>
+
+        <!-- Received Status -->
+        <div class="col-received-status" onclick="window.location='{% url 'transmittals:external_detail' transmittal.pk %}'">
+            {% if transmittal.received_status == 'open' %}
+            <span class="status-tag stag-open">Open</span>
+            {% elif transmittal.received_status == 'closed' %}
+            <span class="status-tag stag-closed">Closed</span>
+            {% elif transmittal.received_status == 'cancelled' %}
+            <span class="status-tag stag-cancelled">Cancelled</span>
+            {% else %}
+            <span style="color:#bdc1c6; font-size:11px;">-</span>
+            {% endif %}
+        </div>
+
+    </li>
+    {% endfor %}
+    {% else %}
+    <li>
+        <div class="empty-state">
+            <span class="material-icons empty-state-icon">inbox</span>
+            <div class="empty-state-title">No transmittals found</div>
+            <p style="color:#5f6368; font-size:14px;">
+                {% if active_section %}No external transmittals match this filter.
+                {% else %}Your external transmittal inbox is empty.{% endif %}
+            </p>
+        </div>
+    </li>
+    {% endif %}
+</ul>
+
+<script>
+    // ── Sort Menu ──────────────────────────────────────────────
+    let sortAsc = false;
+
+    function toggleSortMenu(e) {
+        e.stopPropagation();
+        document.getElementById('sortMenu').classList.toggle('active');
+    }
+
+    function applySort(field, label, btn) {
+        document.querySelectorAll('.sort-item').forEach(i => i.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('currentSortLabel').textContent = label;
+        document.getElementById('sortMenu').classList.remove('active');
+        sortRows(field);
+    }
+
+    function toggleSortDirection() {
+        sortAsc = !sortAsc;
+        const btn = document.getElementById('sortDirBtn');
+        btn.classList.toggle('ascending', sortAsc);
+    }
+
+    function sortRows(field) {
+        // Field keys in sort menu to CSS class mapping
+        const colMap = {
+            reference_number: 'reference',
+            recipient_name: 'recipient-name',
+            company_name: 'company-name',
+            main_type: 'main-type',
+            sub_type: 'sub-type',
+            description: 'description',
+            remarks: 'remarks',
+            created_at: 'created',
+            date_deadline: 'deadline',
+            received_status: 'received-status'
+        };
+        const list = document.getElementById('inbox-list');
+        const rows = Array.from(list.querySelectorAll('.inbox-row'));
+        rows.sort((a, b) => {
+            const targetCol = colMap[field] || 'created';
+            const av = a.querySelector('.col-' + targetCol)?.textContent.trim() || '';
+            const bv = b.querySelector('.col-' + targetCol)?.textContent.trim() || '';
+            return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+        });
+        rows.forEach(r => list.appendChild(r));
+    }
+
+    document.addEventListener('click', function (e) {
+        const menu = document.getElementById('sortMenu');
+        const btn = document.getElementById('sortBtn');
+        if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
+            menu.classList.remove('active');
+        }
+    });
+
+    // ── Column Resize ──────────────────────────────────────────
+    let isResizing = false;
+
+    function startResizeCol(e, colId) {
+        e.preventDefault();
+        isResizing = true;
+        
+        const th = document.getElementById('col-' + colId);
+        const startX = e.clientX;
+        const startW = th.offsetWidth;
+
+        function onMove(ev) {
+            const newW = Math.max(80, startW + ev.clientX - startX);
+            th.style.width = newW + 'px';
+            document.querySelectorAll('.inbox-row .col-' + colId).forEach(c => {
+                c.style.width = newW + 'px';
+            });
+        }
+
+        function onUp() {
+            isResizing = false;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        }
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    }
+
+    // ── Column Drag & Drop (reorder columns) ──────────────────
+    let draggedCol = null;
+
+    document.addEventListener('dragstart', function(e) {
+        if (isResizing) return;
+        
+        const dragHandle = e.target.closest('.drag-handle');
+        if (dragHandle) {
+            draggedCol = dragHandle.closest('.column-header');
+            if (draggedCol) {
+                draggedCol.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', draggedCol.innerHTML);
+            }
+        }
+    });
+
+    document.addEventListener('dragend', function(e) {
+        if (draggedCol) {
+            draggedCol.classList.remove('dragging');
+            document.querySelectorAll('.column-header').forEach(col => {
+                col.classList.remove('drag-over');
+            });
+            draggedCol = null;
+        }
+    });
+
+    document.addEventListener('dragover', function(e) {
+        if (draggedCol && !isResizing) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const target = e.target.closest('.column-header');
+            if (target && target !== draggedCol) {
+                document.querySelectorAll('.column-header').forEach(col => {
+                    col.classList.remove('drag-over');
+                });
+                target.classList.add('drag-over');
+            }
+        }
+    });
+
+    document.addEventListener('dragleave', function(e) {
+        const target = e.target.closest('.column-header');
+        if (target && !target.contains(e.relatedTarget)) {
+            target.classList.remove('drag-over');
+        }
+    });
+
+    document.addEventListener('drop', function(e) {
+        if (draggedCol && !isResizing) {
+            e.preventDefault();
+            const target = e.target.closest('.column-header');
+            if (target && target !== draggedCol) {
+                // Get column indices
+                const headerRow = document.getElementById('header-row');
+                const headers = Array.from(headerRow.querySelectorAll('.column-header'));
+                const draggedIndex = headers.indexOf(draggedCol);
+                const targetIndex = headers.indexOf(target);
+
+                // Swap columns
+                if (draggedIndex !== -1 && targetIndex !== -1) {
+                    // Swap in header
+                    if (draggedIndex < targetIndex) {
+                        draggedCol.parentNode.insertBefore(draggedCol, target.nextSibling);
+                    } else {
+                        draggedCol.parentNode.insertBefore(draggedCol, target);
+                    }
+
+                    // Update all rows to match new column order
+                    const rows = document.querySelectorAll('.inbox-row');
+                    rows.forEach(row => {
+                        const cols = Array.from(row.children);
+                        if (draggedIndex < targetIndex) {
+                            cols[draggedIndex].parentNode.insertBefore(cols[draggedIndex], cols[targetIndex].nextSibling);
+                        } else {
+                            cols[draggedIndex].parentNode.insertBefore(cols[draggedIndex], cols[targetIndex]);
+                        }
+                    });
+                }
+                
+                target.classList.remove('drag-over');
+            }
+        }
+    });
+
+    // ── Sub-nav toggle (used in the sidebar block above) ───────
+    function toggleSubSub(e, subnavId, linkEl) {
+        e.preventDefault();
+        const subnav = document.getElementById(subnavId);
+        const isOpen = subnav.classList.contains('open');
+        if (isOpen) {
+            subnav.classList.remove('open');
+            linkEl.classList.remove('expanded');
+        } else {
+            subnav.classList.add('open');
+            linkEl.classList.add('expanded');
+        }
+        // Navigate after toggling
+        window.location = linkEl.dataset.href || linkEl.href;
+    }
+</script>
+{% endblock %}

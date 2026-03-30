@@ -1,0 +1,902 @@
+{% extends "accounts/gmail_base.html" %}
+{% load static %}
+
+{% block title %}Know More - Transmittal System{% endblock %}
+
+{% block content %}
+<style>
+    .flow-container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* ---- PAGE HEADER ---- */
+    .flow-page-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .flow-page-header h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: #202124;
+        margin: 0 0 6px 0;
+    }
+
+    .flow-page-header p {
+        font-size: 14px;
+        color: #5f6368;
+        margin: 0;
+    }
+
+    /* ---- TAB NAVIGATION ---- */
+    .flow-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 2px solid #e0e0e0;
+        margin-bottom: 28px;
+    }
+
+    .flow-tab {
+        padding: 12px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #5f6368;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        user-select: none;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+    }
+
+    .flow-tab:hover {
+        color: #202124;
+        background-color: #f8f9fa;
+    }
+
+    .flow-tab.active {
+        color: #1a73e8;
+        border-bottom-color: #1a73e8;
+    }
+
+    .flow-tab.active.tab-external {
+        color: #9c27b0;
+        border-bottom-color: #9c27b0;
+    }
+
+    .flow-tab.active.tab-policies {
+        color: #d32f2f;
+        border-bottom-color: #d32f2f;
+    }
+
+    .flow-tab .material-icons {
+        font-size: 20px;
+    }
+
+    /* ---- TAB PANELS ---- */
+    .tab-panel {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ---- SECTION CARD ---- */
+    .section-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 2px rgba(60, 64, 67, .08);
+    }
+
+    .section-card h2 {
+        font-size: 17px;
+        font-weight: 600;
+        color: #202124;
+        margin: 0 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-card h2 .material-icons {
+        font-size: 22px;
+    }
+
+    /* ---- FLOW DIAGRAM ---- */
+    .flow-diagram-image {
+        width: 100%;
+        height: auto;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    /* ---- INFO BOX ---- */
+    .info-box {
+        background-color: #e8f0fe;
+        border-left: 4px solid #1a73e8;
+        padding: 16px 20px;
+        border-radius: 0 6px 6px 0;
+        margin-bottom: 24px;
+    }
+
+    .info-box p {
+        margin: 0;
+        font-size: 14px;
+        color: #202124;
+        line-height: 1.6;
+    }
+
+    /* ---- FLOW STEPS ---- */
+    .flow-step {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 14px;
+        padding: 16px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        transition: all 0.25s ease;
+    }
+
+    .flow-step:hover {
+        background-color: #eef2ff;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12);
+    }
+
+    .flow-step-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        background-color: #667eea;
+        color: white;
+        border-radius: 50%;
+        flex-shrink: 0;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .flow-step-content {
+        flex: 1;
+    }
+
+    .flow-step-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    .flow-step-title .material-icons {
+        color: #667eea;
+        font-size: 20px;
+    }
+
+    .flow-step-title h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #202124;
+    }
+
+    .flow-step-description {
+        margin: 0;
+        font-size: 13px;
+        color: #5f6368;
+        line-height: 1.55;
+    }
+
+    /* ---- EXTERNAL-SPECIFIC STYLES ---- */
+    .ext-flow-step {
+        border-left-color: #9c27b0;
+    }
+
+    .ext-flow-step:hover {
+        background-color: #faf0fc;
+        box-shadow: 0 2px 8px rgba(156, 39, 176, 0.12);
+    }
+
+    .ext-flow-step .flow-step-number {
+        background-color: #9c27b0;
+    }
+
+    .ext-flow-step .flow-step-title .material-icons {
+        color: #9c27b0;
+    }
+
+    /* ---- COMPARISON GRID (ext types) ---- */
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 12px;
+    }
+
+    .comp-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px;
+        transition: box-shadow 0.2s;
+    }
+
+    .comp-card:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .comp-header {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .comp-desc {
+        font-size: 13px;
+        color: #5f6368;
+        line-height: 1.55;
+        margin: 0;
+    }
+
+    /* ---- TIMELINE (External) ---- */
+    .timeline-list {
+        list-style: none;
+        padding-left: 18px;
+        position: relative;
+    }
+
+    .timeline-list::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e0e0e0;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 22px;
+        padding-left: 22px;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -23px;
+        top: 2px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #9c27b0;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px #9c27b0;
+    }
+
+    .timeline-title {
+        font-weight: 600;
+        font-size: 14px;
+        color: #202124;
+        margin-bottom: 4px;
+    }
+
+    .timeline-desc {
+        font-size: 13px;
+        color: #5f6368;
+        line-height: 1.55;
+    }
+
+    /* ---- RULE BOX ---- */
+    .rule-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 18px 20px;
+        border-left: 4px solid #9c27b0;
+        margin-top: 12px;
+    }
+
+    .rule-title {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 6px;
+        color: #202124;
+    }
+
+    .rule-text {
+        font-size: 13px;
+        line-height: 1.55;
+        color: #5f6368;
+    }
+
+    /* ---- POLICIES SECTION ---- */
+    .policy-item {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 16px;
+        padding: 18px;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        border-left: 4px solid #d32f2f;
+        transition: all 0.2s ease;
+    }
+
+    .policy-item:hover {
+        box-shadow: 0 2px 8px rgba(211, 47, 47, 0.1);
+    }
+
+    .policy-icon {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        background: #fce4ec;
+        border-radius: 50%;
+        flex-shrink: 0;
+        padding-top: 8px;
+    }
+
+    .policy-icon .material-icons {
+        color: #c62828;
+        font-size: 20px;
+    }
+
+    .policy-content h3 {
+        margin: 0 0 6px 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #202124;
+    }
+
+    .policy-content p {
+        margin: 0;
+        font-size: 13px;
+        color: #5f6368;
+        line-height: 1.55;
+    }
+
+    .policy-content ul {
+        margin: 6px 0 0 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: #5f6368;
+        line-height: 1.7;
+    }
+
+    /* ---- KEY FEATURES BOX ---- */
+    .features-box {
+        background-color: #f3e5f5;
+        border-left: 4px solid #9c27b0;
+        padding: 16px 20px;
+        border-radius: 0 6px 6px 0;
+        margin-bottom: 24px;
+    }
+
+    .features-box p {
+        margin: 0;
+        font-size: 14px;
+        color: #202124;
+        line-height: 1.6;
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 768px) {
+        .flow-container {
+            padding: 12px;
+        }
+
+        .flow-page-header h1 {
+            font-size: 22px;
+        }
+
+        .flow-tabs {
+            overflow-x: auto;
+        }
+
+        .flow-tab {
+            padding: 10px 16px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .flow-step {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .flow-step-number {
+            width: 34px;
+            height: 34px;
+            font-size: 14px;
+        }
+
+        .comparison-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .section-card {
+            padding: 16px;
+        }
+    }
+</style>
+
+<div class="flow-container">
+    <!-- Page Header -->
+    <div class="flow-page-header">
+        <h1>Transmittal System — Know More</h1>
+        <p>Understand the complete transmittal workflow, processes, and policies</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="flow-tabs">
+        <button class="flow-tab active" onclick="switchTab('internal', this)" id="tab-internal">
+            <span class="material-icons">domain</span>
+            Internal Flow
+        </button>
+        <button class="flow-tab tab-external" onclick="switchTab('external', this)" id="tab-external">
+            <span class="material-icons">public</span>
+            External Flow
+        </button>
+        <button class="flow-tab tab-policies" onclick="switchTab('policies', this)" id="tab-policies">
+            <span class="material-icons">policy</span>
+            Policies
+        </button>
+    </div>
+
+    <!-- ================================================================
+         TAB 1: INTERNAL TRANSMITTAL FLOW
+         ================================================================ -->
+    <div class="tab-panel active" id="panel-internal">
+
+        <!-- Flow Diagram -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #667eea;">account_tree</span>
+                Visual Flow Diagram
+            </h2>
+            <img src="{% static 'images/transmittal flow.png' %}" alt="Internal Transmittal Flow Diagram"
+                class="flow-diagram-image" />
+        </div>
+
+        <!-- How it Works -->
+        <div class="info-box">
+            <p>
+                <strong>How it works:</strong> The internal transmittal system manages the flow of documents and
+                packages
+                between locations within the organization. Each stage is tracked with timestamps and digital signatures
+                to ensure accountability and transparency throughout the entire process.
+            </p>
+        </div>
+
+        <!-- Internal Flow Steps -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #667eea;">route</span>
+                Internal Process Steps
+            </h2>
+
+            {% for step in internal_steps %}
+            <div class="flow-step">
+                <div class="flow-step-number">{{ step.number }}</div>
+                <div class="flow-step-content">
+                    <div class="flow-step-title">
+                        <span class="material-icons">{{ step.icon }}</span>
+                        <h3>{{ step.status }}</h3>
+                    </div>
+                    <p class="flow-step-description">{{ step.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Completed -->
+            <div class="flow-step" style="border-left-color: #34a853;">
+                <div class="flow-step-number" style="background-color: #34a853;">✓</div>
+                <div class="flow-step-content">
+                    <div class="flow-step-title">
+                        <span class="material-icons" style="color: #34a853;">done_all</span>
+                        <h3>Completed</h3>
+                    </div>
+                    <p class="flow-step-description">The transmittal has been successfully delivered and received by the
+                        intended recipient with full verification and digital signature.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="features-box">
+            <p>
+                <strong>Key Features:</strong>
+                <br>• Real-time status tracking for all transmittals
+                <br>• Digital signatures for receipt confirmation
+                <br>• Automated email notifications at each stage
+                <br>• Location-based custodian management
+                <br>• Comprehensive activity logs and audit trails
+            </p>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         TAB 2: EXTERNAL TRANSMITTAL FLOW
+         ================================================================ -->
+    <div class="tab-panel" id="panel-external">
+
+        <!-- Flow Diagram -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #9c27b0;">account_tree</span>
+                Visual Flow Diagram
+            </h2>
+            <img src="{% static 'images/External Transmittal Flow.png' %}" alt="External Transmittal Flow Diagram"
+                class="flow-diagram-image" />
+            <img src="{% static 'images/External Transmittal [For Return].png' %}" alt="External Transmittal Flow Diagram"
+                class="flow-diagram-image" />
+        </div>
+
+        <!-- Transmittal Types -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #9c27b0;">swap_horiz</span>
+                External Transmittal Types
+            </h2>
+            <div class="comparison-grid">
+                <div class="comp-card" style="border-top: 3px solid #34a853;">
+                    <div class="comp-header" style="color: #34a853;">
+                        <span class="material-icons">inventory_2</span> For Keep
+                    </div>
+                    <p class="comp-desc">Permanent transfer. No return expected. Process is complete once recipient
+                        acknowledges receipt with Proof of Delivery.</p>
+                </div>
+                <div class="comp-card" style="border-top: 3px solid #f9a825;">
+                    <div class="comp-header" style="color: #f9a825;">
+                        <span class="material-icons">assignment_return</span> For Return
+                    </div>
+                    <p class="comp-desc">Temporary transfer. Includes deadline monitoring and resolution tracking.
+                        Requires regular follow-ups until resolved.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- External Workflow Stages -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #9c27b0;">route</span>
+                External Workflow Stages
+            </h2>
+            <ul class="timeline-list">
+                {% for step in external_steps %}
+                <li class="timeline-item">
+                    <div class="timeline-dot" {% if step.dot_color
+                        %}style="background: {{ step.dot_color }}; box-shadow: 0 0 0 2px {{ step.dot_color }};" {% endif
+                        %}></div>
+                    <div class="timeline-title">{{ step.number }}. {{ step.title }}</div>
+                    <div class="timeline-desc">{{ step.description|safe }}</div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- System Rules -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #c62828;">gavel</span>
+                System Rules
+            </h2>
+            <div class="rule-box" style="background: #fce4ec; border-left-color: #c62828;">
+                <div class="rule-title" style="color: #c62828;">Proof Requirements</div>
+                <div class="rule-text">
+                    All resolution actions (Mark Received, Full/Partial Return, Paid Sample) <strong>REQUIRE</strong> a
+                    file attachment as proof (RGA, Photo, or PDF document). Form submission will be blocked if proof is
+                    missing.
+                </div>
+            </div>
+        </div>
+
+        <!-- External Key Features -->
+        <div class="features-box">
+            <p>
+                <strong>External System Features:</strong>
+                <br>• SMTP email notifications to external recipients
+                <br>• Proof of Delivery (POD) upload and tracking
+                <br>• Return deadline monitoring with automated reminders
+                <br>• Multiple resolution options (Full Return, Partial, Paid Sample, Convert to Keep)
+                <br>• Admin override capability for special cases
+            </p>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         TAB 3: POLICIES
+         ================================================================ -->
+    <div class="tab-panel" id="panel-policies">
+
+        <!-- General Policies -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #d32f2f;">admin_panel_settings</span>
+                General Policies
+            </h2>
+
+            <div class="policy-item">
+                <div class="policy-icon">
+                    <span class="material-icons">verified_user</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Account Approval Policy</h3>
+                    <p>All user accounts must be approved by an administrator before access is granted to the
+                        transmittal system.
+                        Users will remain in "Pending" status until reviewed and approved.</p>
+                </div>
+            </div>
+
+            <div class="policy-item">
+                <div class="policy-icon">
+                    <span class="material-icons">timer</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Session Timeout Policy</h3>
+                    <p>For security, user sessions automatically expire after <strong>15 minutes</strong> of inactivity.
+                        Users will be logged out and redirected to the login page. Activity such as mouse movement,
+                        clicks,
+                        or keyboard input resets the timer.</p>
+                </div>
+            </div>
+
+            <div class="policy-item">
+                <div class="policy-icon">
+                    <span class="material-icons">lock</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Digital Signature Policy</h3>
+                    <p>All receipt confirmations require a digital signature from the recipient. This ensures
+                        non-repudiation and provides a verifiable record of document handover.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Internal Transmittal Policies -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #1a73e8;">domain</span>
+                Internal Transmittal Policies
+            </h2>
+
+            <div class="policy-item" style="border-left-color: #1a73e8;">
+                <div class="policy-icon" style="background: #e3f2fd;">
+                    <span class="material-icons" style="color: #1565c0;">people</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Custodian Responsibility</h3>
+                    <p>Each location must have an assigned custodian responsible for:</p>
+                    <ul>
+                        <li>Receiving incoming transmittals at their location</li>
+                        <li>Marking transmittals as "Arrived" upon physical receipt</li>
+                        <li>Notifying the intended recipient for pick-up</li>
+                        <li>Maintaining accurate records of all handovers</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="policy-item" style="border-left-color: #1a73e8;">
+                <div class="policy-icon" style="background: #e3f2fd;">
+                    <span class="material-icons" style="color: #1565c0;">cancel</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Cancellation Policy</h3>
+                    <p>Only the <strong>sender</strong> of a transmittal can cancel it, and only while it is still in
+                        <strong>"In Transit"</strong> status. Once a transmittal has been marked as Arrived, Picked, or
+                        Received, it cannot be cancelled.
+                    </p>
+                </div>
+            </div>
+
+            <div class="policy-item" style="border-left-color: #1a73e8;">
+                <div class="policy-icon" style="background: #e3f2fd;">
+                    <span class="material-icons" style="color: #1565c0;">notifications_active</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Email Notification Policy</h3>
+                    <p>Automated email notifications are sent at every status change:</p>
+                    <ul>
+                        <li><strong>In Transit:</strong> Recipient and destination custodian are notified</li>
+                        <li><strong>Arrived:</strong> Recipient is notified that their package is ready for pick-up</li>
+                        <li><strong>Picked Up:</strong> Sender is notified</li>
+                        <li><strong>Received:</strong> Sender receives confirmation with digital signature</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="policy-item" style="border-left-color: #1a73e8;">
+                <div class="policy-icon" style="background: #e3f2fd;">
+                    <span class="material-icons" style="color: #1565c0;">autorenew</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Auto-Receive Policy</h3>
+                    <p>Transmittals that remain in <strong>"Picked Up"</strong> status for more than
+                        <strong>3 days</strong> are automatically marked as <strong>"Received"</strong> by the system.
+                        This ensures transmittals are not left indefinitely in the picked-up state. An automated
+                        email notification is sent to both the sender and recipient when auto-receive occurs.
+                    </p>
+                </div>
+            </div>
+
+            <div class="policy-item" style="border-left-color: #1a73e8;">
+                <div class="policy-icon" style="background: #e3f2fd;">
+                    <span class="material-icons" style="color: #1565c0;">alarm</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Status Reminder Policy</h3>
+                    <p>The system sends <strong>daily email reminders</strong> for transmittals that have been stuck
+                        in the same status for <strong>5 or more days</strong>. This applies to transmittals in:</p>
+                    <ul>
+                        <li><strong>In Transit</strong> — package has not arrived at the destination</li>
+                        <li><strong>Arrived</strong> — package has not been picked up by the recipient</li>
+                        <li><strong>Picked Up</strong> — recipient has not confirmed receipt</li>
+                    </ul>
+                    <p>Reminders are sent once per day to both the sender and recipient until the transmittal
+                        progresses to the next status. Received and cancelled transmittals do not trigger reminders.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- External Transmittal Policies -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #9c27b0;">public</span>
+                External Transmittal Policies
+            </h2>
+
+            <div class="policy-item" style="border-left-color: #9c27b0;">
+                <div class="policy-icon" style="background: #f3e5f5;">
+                    <span class="material-icons" style="color: #7b1fa2;">attach_file</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Proof of Delivery Requirement</h3>
+                    <p>All resolution actions for external transmittals <strong>REQUIRE</strong> a file attachment as
+                        proof.
+                        Accepted formats include photos, scanned documents (PDF), or RGA forms. The system will block
+                        form
+                        submission if no proof is provided.</p>
+                </div>
+            </div>
+
+            <div class="policy-item" style="border-left-color: #9c27b0;">
+                <div class="policy-icon" style="background: #f3e5f5;">
+                    <span class="material-icons" style="color: #7b1fa2;">event</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Return Deadline Policy</h3>
+                    <p>"For Return" transmittals must include both an <strong>Expected Return Date</strong> and a
+                        <strong>Hard Deadline</strong>. The system monitors these dates and sends automated reminders
+                        as deadlines approach. Overdue items are flagged for immediate attention.
+                    </p>
+                </div>
+            </div>
+
+            <div class="policy-item" style="border-left-color: #9c27b0;">
+                <div class="policy-icon" style="background: #f3e5f5;">
+                    <span class="material-icons" style="color: #7b1fa2;">swap_vert</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Resolution Options Policy</h3>
+                    <p>"For Return" transmittals can be resolved through one of the following actions:</p>
+                    <ul>
+                        <li><strong>Full Return:</strong> All items returned — closes the transmittal</li>
+                        <li><strong>Partial Return:</strong> Some items returned — transmittal remains Open</li>
+                        <li><strong>Paid Sample:</strong> Receiver keeps the item and pays — closes the transmittal</li>
+                        <li><strong>Convert to Keep:</strong> Decision to make the transfer permanent — closes the
+                            transmittal</li>
+                    </ul>
+                </div>
+            </div>
+
+
+            <div class="policy-item" style="border-left-color: #9c27b0;">
+                <div class="policy-icon" style="background: #f3e5f5;">
+                    <span class="material-icons" style="color: #7b1fa2;">schedule_send</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Deadline Reminder Policy</h3>
+                    <p>For <strong>"For Return"</strong> external transmittals, the system sends
+                        <strong>daily deadline reminder emails</strong> starting from the hard deadline date.
+                        Reminders are scheduled on weekdays (Monday–Friday) at 9:00 AM and continue every day
+                        until the transmittal is resolved or closed.</p>
+                    <ul>
+                        <li>Only one reminder email is sent per transmittal per day (tracked via
+                            <em>last notification date</em>) to prevent duplicate emails</li>
+                        <li>Emails are sent to the <strong>external recipient</strong> with all original
+                            file attachments included</li>
+                        <li>Urgency escalates visually based on how overdue the transmittal is:
+                            <ul>
+                                <li><strong>Deadline Day:</strong> "DEADLINE TODAY" (orange)</li>
+                                <li><strong>1–2 Days Overdue:</strong> days overdue count (red)</li>
+                                <li><strong>3–6 Days Overdue:</strong> days overdue count (dark red)</li>
+                                <li><strong>7+ Days Overdue:</strong> "FINAL REMINDER" (darkest red)</li>
+                            </ul>
+                        </li>
+                        <li>Closed transmittals are automatically excluded from reminders</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data & Security Policies -->
+        <div class="section-card">
+            <h2>
+                <span class="material-icons" style="color: #2e7d32;">security</span>
+                Data &amp; Security Policies
+            </h2>
+
+            <div class="policy-item" style="border-left-color: #2e7d32;">
+                <div class="policy-icon" style="background: #e8f5e9;">
+                    <span class="material-icons" style="color: #2e7d32;">history</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Audit Trail Policy</h3>
+                    <p>Every action performed in the system is recorded in the activity log, including:</p>
+                    <ul>
+                        <li>User logins and logouts (with IP address and device info)</li>
+                        <li>Transmittal creation, status changes, and updates</li>
+                        <li>Administrative actions (approvals, rejections, overrides)</li>
+                        <li>All records include timestamps for traceability</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="policy-item" style="border-left-color: #2e7d32;">
+                <div class="policy-icon" style="background: #e8f5e9;">
+                    <span class="material-icons" style="color: #2e7d32;">shield</span>
+                </div>
+                <div class="policy-content">
+                    <h3>Role-Based Access Control</h3>
+                    <p>The system enforces strict role-based permissions:</p>
+                    <ul>
+
+                        <li><strong>Custodian:</strong> Location-based management of incoming/outgoing transmittals</li>
+                        <li><strong>Regular User:</strong> Can send and receive transmittals within approved scope</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabName, btnEl) {
+        // Deactivate all tabs and panels
+        document.querySelectorAll('.flow-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+        // Activate clicked tab and corresponding panel
+        btnEl.classList.add('active');
+        document.getElementById('panel-' + tabName).classList.add('active');
+    }
+</script>
+{% endblock %}

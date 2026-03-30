@@ -1,0 +1,101 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}User Registration{% endblock %}
+
+{% block content %}
+<h1>User Registration</h1>
+<p style="color: #666; margin-bottom: 20px;">
+    Create a new account. All fields are required.
+</p>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    
+    <fieldset class="fieldset-group">
+        <legend>Account Information</legend>
+        
+        <div class="form-group">
+            <label for="{{ user_form.username.id_for_label }}">Username</label>
+            {{ user_form.username }}
+            {% if user_form.username.errors %}
+                <ul class="errorlist">
+                    {% for error in user_form.username.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ user_form.email.id_for_label }}">Email Address</label>
+            {{ user_form.email }}
+            {% if user_form.email.errors %}
+                <ul class="errorlist">
+                    {% for error in user_form.email.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ user_form.password1.id_for_label }}">Password</label>
+            {{ user_form.password1 }}
+            <div class="help-text">{{ user_form.password1.help_text }}</div>
+            {% if user_form.password1.errors %}
+                <ul class="errorlist">
+                    {% for error in user_form.password1.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ user_form.password2.id_for_label }}">Confirm Password</label>
+            {{ user_form.password2 }}
+            {% if user_form.password2.errors %}
+                <ul class="errorlist">
+                    {% for error in user_form.password2.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </fieldset>
+    
+    <fieldset class="fieldset-group">
+        <legend>Personal Information</legend>
+        
+        <div class="form-group">
+            <label for="{{ user_form.first_name.id_for_label }}">First Name</label>
+            {{ user_form.first_name }}
+            {% if user_form.first_name.errors %}
+                <ul class="errorlist">
+                    {% for error in user_form.first_name.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ user_form.last_name.id_for_label }}">Last Name</label>
+            {{ user_form.last_name }}
+            {% if user_form.last_name.errors %}
+                <ul class="errorlist">
+                    {% for error in user_form.last_name.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </fieldset>
+    
+    <button type="submit">Create Account</button>
+</form>
+
+<div class="link-group">
+    <p>Already have an account? <a href="{% url 'accounts:login' %}">Login here</a></p>
+</div>
+{% endblock %}

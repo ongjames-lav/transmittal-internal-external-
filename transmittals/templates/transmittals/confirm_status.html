@@ -1,0 +1,337 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}Confirm Status Update{% endblock %}
+
+{% block content %}
+<style>
+    /* File input styling to match edit profile */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="file"],
+    textarea,
+    select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.3s ease;
+        background-color: white;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="file"]:focus,
+    textarea:focus,
+    select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .container {
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .confirm-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .confirm-header {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .confirm-header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    .confirm-header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        font-size: 14px;
+    }
+
+    .confirm-body {
+        padding: 30px;
+    }
+
+    .info-box {
+        background: #e8f5e9;
+        border: 1px solid #28a745;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: #1b5e20;
+    }
+
+    .info-box strong {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .transmittal-info {
+        background: #f8f9fa;
+        border-left: 4px solid #28a745;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+
+    .info-item {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .info-item strong {
+        color: #333;
+        display: inline-block;
+        width: 150px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 15px;
+        font-weight: 600;
+        font-size: 13px;
+        margin-top: 10px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #218838;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3);
+    }
+
+    .confirm-footer {
+        background: #f8f9fa;
+        padding: 15px 30px;
+        border-top: 1px solid #dee2e6;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+    }
+
+    .action-description {
+        font-size: 13px;
+        color: #555;
+        margin-top: 15px;
+        padding: 12px;
+        background: #f0f0f0;
+        border-radius: 4px;
+        border-left: 3px solid #28a745;
+    }
+</style>
+
+<div class="container">
+    <div class="confirm-card">
+        <!-- Header -->
+        <div class="confirm-header">
+            <h1>✓ Confirm Status Update</h1>
+            <p>Mark this transmittal as {{ action_display|upper }}</p>
+        </div>
+
+        <!-- Body -->
+        <div class="confirm-body">
+            <!-- Info Message -->
+            <div class="info-box">
+                <strong>Updating Status</strong>
+                <p>You are about to update the status of this transmittal to <strong>{{ action_display }}</strong>. This
+                    action will notify the relevant parties.</p>
+            </div>
+
+            <!-- Transmittal Details -->
+            <div class="transmittal-info">
+                <div class="info-item">
+                    <strong>Reference:</strong> {{ transmittal.reference_number }}
+                </div>
+                <div class="info-item">
+                    <strong>From:</strong> {{ transmittal.sender.get_full_name|default:transmittal.sender.username }}
+                </div>
+                <div class="info-item">
+                    <strong>To:</strong> {{ transmittal.recipient_name }}
+                </div>
+                <div class="info-item">
+                    <strong>Destination:</strong> {% if transmittal.assigned_location_text %}{{ transmittal.assigned_location_text }}{% elif transmittal.destination_location %}{{ transmittal.destination_location.name }}{% else %}Unknown{% endif %}
+                </div>
+                <div class="info-item">
+                    <strong>Current Status:</strong> {{ transmittal.get_status_display }}
+                </div>
+                <div style="margin-top: 10px;">
+                    <span class="status-badge">{{ action_display|upper }}</span>
+                </div>
+            </div>
+
+            <!-- Action Description -->
+            {% if action == 'arrived' %}
+            <div class="action-description">
+                <strong>📍 Marking as Arrived:</strong> You are confirming that this transmittal has physically arrived
+                at the destination location. The recipient will be notified.
+            </div>
+            {% elif action == 'picked' %}
+            <div class="action-description" style="border-left-color: #6f42c1;">
+                <strong>📦 Marking as Picked:</strong> You are confirming that this transmittal has been picked up. The
+                sender and recipient will be notified.
+            </div>
+            {% elif action == 'received' %}
+            <div class="action-description">
+                <strong>✓ Marking as Received:</strong> You are confirming that you have received and verified this
+                transmittal. The sender will be notified.
+            </div>
+            {% endif %}
+
+            <!-- Confirm Form -->
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if action == 'pick' and form %}
+                <!-- Pick Remarks Section -->
+                <div
+                    style="margin-bottom: 25px; padding: 20px; background: #f8f0ff; border-radius: 4px; border: 1px solid #d4b8e8;">
+                    <h5 style="margin-bottom: 15px; color: #6f42c1; font-weight: 600;">
+                        <strong>📦 Pick Details</strong>
+                    </h5>
+                    <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+                        Optionally add remarks about the pickup (e.g., care-of person details or pickup notes).
+                    </p>
+
+                    <div style="margin-bottom: 15px;">
+                        {{ form.remarks }}
+                        {% if form.remarks.errors %}
+                        <div style="color: #dc3545; font-size: 12px; margin-top: 5px;">
+                            {{ form.remarks.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div style="margin-bottom: 0;">
+                        <label style="display: flex; align-items: center; font-weight: 500; color: #333;">
+                            {{ form.confirm }}
+                            <span style="margin-left: 8px;">{{ form.confirm.label }}</span>
+                        </label>
+                        {% if form.confirm.errors %}
+                        <div style="color: #dc3545; font-size: 12px; margin-top: 5px;">
+                            {{ form.confirm.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if action == 'received' and form %}
+                <!-- Signature Section (for received status) -->
+                <div
+                    style="margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">
+                    <h5 style="margin-bottom: 15px; color: #333; font-weight: 600;">
+                        <strong>📝 Digital Signature</strong>
+                    </h5>
+                    <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+                        Optionally upload your digital signature or your stored signature will be used automatically.
+                    </p>
+
+                    {% if request.user.profile.digital_signature %}
+                    <div style="margin-bottom: 20px; padding: 16px; background: white; border-radius: 4px; border: 1px solid #dee2e6; text-align: center;">
+                        <p style="font-size: 13px; color: #5f6368; margin-bottom: 8px; font-weight: 500;">Your Current Signature</p>
+                        <img src="{{ request.user.profile.digital_signature.url }}" alt="Current Signature"
+                            style="max-width: 200px; max-height: 100px; object-fit: contain; border: 1px solid #dadce0; border-radius: 4px; padding: 8px; background: white;">
+                    </div>
+                    {% endif %}
+
+                    <div style="margin-bottom: 15px;">
+                        <label for="{{ form.signature.id_for_label }}"
+                            style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+                            {{ form.signature.label }}
+                        </label>
+                        {{ form.signature }}
+                        {% if form.signature.errors %}
+                        <div style="color: #dc3545; font-size: 12px; margin-top: 5px;">
+                            {{ form.signature.errors }}
+                        </div>
+                        {% endif %}
+                        {% if form.signature.help_text %}
+                        <small style="display: block; margin-top: 8px; color: #5f6368; font-size: 12px;">{{ form.signature.help_text|safe }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div style="margin-bottom: 0;">
+                        <label style="display: flex; align-items: center; font-weight: 500; color: #333;">
+                            {{ form.confirm }}
+                            <span style="margin-left: 8px;">{{ form.confirm.label }}</span>
+                        </label>
+                        {% if form.confirm.errors %}
+                        <div style="color: #dc3545; font-size: 12px; margin-top: 5px;">
+                            {{ form.confirm.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-success">✓ Confirm {{ action_display }}</button>
+                    <a href="{% url 'transmittals:detail' transmittal.id %}" class="btn btn-secondary">← Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="confirm-footer">
+            <p>The sender and other relevant parties will be notified of this status change.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

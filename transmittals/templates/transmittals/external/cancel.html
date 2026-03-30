@@ -1,0 +1,86 @@
+{% extends 'transmittals/external_base.html' %}
+{% load static %}
+
+{% block title %}Cancel External Transmittal | Transmittal System{% endblock %}
+
+{% block content %}
+<div style="background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 32px;">
+    <div style="max-width: 600px; margin: 0 auto;">
+        <!-- Header -->
+        <div style="margin-bottom: 32px;">
+            <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 500;">Cancel External Transmittal</h1>
+            <p style="margin: 0; color: #5f6368;">Reference: <strong>{{ transmittal.reference_number }}</strong></p>
+        </div>
+
+        <!-- Warning Box -->
+        <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 16px; margin-bottom: 24px; display: flex; gap: 12px;">
+            <span class="material-icons" style="color: #ff6f00; flex-shrink: 0;">warning</span>
+            <div>
+                <div style="font-weight: 500; color: #ff6f00;">Cancellation Warning</div>
+                <div style="font-size: 13px; color: #666; margin-top: 4px;">This action will permanently cancel the transmittal. The recipient will be notified via email.</div>
+            </div>
+        </div>
+
+        <!-- Transmittal Details -->
+        <div style="background-color: #f8f9fa; border: 1px solid #dadce0; border-radius: 4px; padding: 16px; margin-bottom: 24px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <div style="font-size: 12px; color: #5f6368; text-transform: uppercase;">Type</div>
+                    <div style="font-weight: 500; margin-top: 4px;">{{ transmittal.get_main_type_display }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: #5f6368; text-transform: uppercase;">Status</div>
+                    <div style="font-weight: 500; margin-top: 4px;">
+                        <span style="background: #fce4ec; color: #c2185b; padding: 4px 8px; border-radius: 4px; font-size: 13px;">{{ transmittal.get_status_display }}</span>
+                    </div>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <div style="font-size: 12px; color: #5f6368; text-transform: uppercase;">Description</div>
+                    <div style="font-weight: 500; margin-top: 4px; word-break: break-word;">{{ transmittal.description }}</div>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <div style="font-size: 12px; color: #5f6368; text-transform: uppercase;">Recipient</div>
+                    <div style="font-weight: 500; margin-top: 4px;">{{ transmittal.recipient_name }} ({{ transmittal.recipient_company_name }})</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cancellation Reason Form -->
+        <form method="POST" style="margin-bottom: 24px;">
+            {% csrf_token %}
+            
+            {% if form_error %}
+            <div style="background-color: #ffebee; border: 1px solid #ef5350; border-radius: 4px; padding: 12px; margin-bottom: 16px; color: #c62828;">
+                {{ form_error }}
+            </div>
+            {% endif %}
+            
+            <div style="margin-bottom: 16px;">
+                <label for="cancellation_reason" style="display: block; font-weight: 500; margin-bottom: 8px;">Cancellation Reason <span style="color: #d32f2f;">*</span></label>
+                <textarea 
+                    id="cancellation_reason"
+                    name="cancellation_reason"
+                    style="width: 100%; min-height: 120px; padding: 12px; border: 1px solid #dadce0; border-radius: 4px; font-family: Arial, sans-serif; font-size: 14px; box-sizing: border-box;"
+                    placeholder="Please provide the reason for cancelling this transmittal..."
+                    required></textarea>
+                <div style="font-size: 12px; color: #5f6368; margin-top: 4px;">This reason will be recorded in the audit trail.</div>
+            </div>
+
+            <!-- Buttons -->
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" onclick="return confirm('Are you sure you want to cancel this transmittal? This action cannot be undone.')" style="flex: 1; background-color: #d32f2f; color: white; padding: 12px 24px; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s;">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">delete</span> Cancel Transmittal
+                </button>
+                <a href="{% url 'transmittals:external_detail' transmittal.id %}" style="flex: 1; background-color: #f8f9fa; color: #3c4043; padding: 12px 24px; border: 1px solid #dadce0; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; text-align: center; transition: background-color 0.2s;">
+                    Go Back
+                </a>
+            </div>
+        </form>
+
+        <!-- Info Note -->
+        <div style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px 16px; border-radius: 2px; font-size: 13px; color: #1565c0;">
+            <strong>Note:</strong> Once cancelled, the transmittal cannot be restored. The recipient will be notified about the cancellation.
+        </div>
+    </div>
+</div>
+{% endblock %}

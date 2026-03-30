@@ -1,0 +1,187 @@
+{% extends 'transmittals/external_base.html' %}
+{% load static %}
+
+{% block title %}External Transmittal Reports{% endblock %}
+
+{% block content %}
+<div style="background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <!-- Header -->
+    <div style="padding: 24px; border-bottom: 1px solid #dadce0;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons" style="color: #9c27b0;">assessment</span>
+            External Transmittal Reports
+        </h1>
+        <p style="margin: 8px 0 0 0; color: #5f6368; font-size: 14px;">Export and filter your external transmittals</p>
+    </div>
+
+    <!-- Filter and Export Section -->
+    <div style="padding: 24px; background-color: #f8f9fa; border-bottom: 1px solid #dadce0;">
+        <form method="GET" style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+            <!-- Status Filter -->
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 500; color: #5f6368; margin-bottom: 4px;">Status</label>
+                <select name="status" style="padding: 8px 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 14px; min-width: 150px;">
+                    <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+                    <option value="in_transit" {% if status_filter == 'in_transit' %}selected{% endif %}>In Transit</option>
+                    <option value="received" {% if status_filter == 'received' %}selected{% endif %}>Received / Closed</option>
+                    <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
+                    <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+
+            <!-- Main Type Filter -->
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 500; color: #5f6368; margin-bottom: 4px;">Type</label>
+                <select name="main_type" style="padding: 8px 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 14px; min-width: 140px;">
+                    <option value="" {% if not main_type_filter %}selected{% endif %}>All Types</option>
+                    <option value="for_keep" {% if main_type_filter == 'for_keep' %}selected{% endif %}>For Keep</option>
+                    <option value="for_return" {% if main_type_filter == 'for_return' %}selected{% endif %}>For Return</option>
+                </select>
+            </div>
+
+            <!-- Sub Type Filter -->
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 500; color: #5f6368; margin-bottom: 4px;">Sub Type</label>
+                <select name="sub_type" style="padding: 8px 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 14px; min-width: 150px;">
+                    <option value="" {% if not sub_type_filter %}selected{% endif %}>All Sub Types</option>
+                    <option value="full" {% if sub_type_filter == 'full' %}selected{% endif %}>Full Return</option>
+                    <option value="partial" {% if sub_type_filter == 'partial' %}selected{% endif %}>Partial Return</option>
+                    <option value="for_sample" {% if sub_type_filter == 'for_sample' %}selected{% endif %}>Paid Sample</option>
+                    <option value="for_keep" {% if sub_type_filter == 'for_keep' %}selected{% endif %}>For Keep (Sub)</option>
+                </select>
+            </div>
+
+            <!-- Date From -->
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 500; color: #5f6368; margin-bottom: 4px;">From Date</label>
+                <input type="date" name="date_from" value="{{ date_from }}" style="padding: 8px 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 14px;">
+            </div>
+
+            <!-- Date To -->
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 500; color: #5f6368; margin-bottom: 4px;">To Date</label>
+                <input type="date" name="date_to" value="{{ date_to }}" style="padding: 8px 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 14px;">
+            </div>
+
+            <!-- Filter Button -->
+            <button type="submit" style="padding: 8px 24px; background-color: #9c27b0; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#7b1fa2'" onmouseout="this.style.backgroundColor='#9c27b0'">
+                Filter
+            </button>
+
+            <!-- Export Button (submits the hidden download form) -->
+            <button type="button" onclick="downloadExcel()" style="padding: 8px 24px; background-color: #34a853; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#2d7d4a'" onmouseout="this.style.backgroundColor='#34a853'">
+                📥 Download Excel
+            </button>
+        </form>
+
+        <!-- Hidden download form (separate from filter form, preserves session cookies) -->
+        <form id="downloadForm" method="GET" action="{% url 'transmittals:external_report' %}" style="display:none;">
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <input type="hidden" name="main_type" value="{{ main_type_filter }}">
+            <input type="hidden" name="sub_type" value="{{ sub_type_filter }}">
+            <input type="hidden" name="date_from" value="{{ date_from }}">
+            <input type="hidden" name="date_to" value="{{ date_to }}">
+            <input type="hidden" name="download" value="excel">
+        </form>
+        <script>
+        function downloadExcel() {
+            document.getElementById('downloadForm').submit();
+        }
+        </script>
+    </div>
+
+    <!-- Results Info -->
+    <div style="padding: 16px 24px; background-color: #f8f9fa; border-bottom: 1px solid #dadce0; font-size: 14px;">
+        Total transmittals matching filters: <strong>{{ transmittal_count }}</strong>
+    </div>
+
+    <!-- Transmittals Table -->
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <thead>
+                <tr style="background-color: #f8f9fa; border-bottom: 1px solid #dadce0;">
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 500; color: #202124;">Reference Number</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 500; color: #202124;">Type</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 500; color: #202124;">Sub Type</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 500; color: #202124;">Recipient</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 500; color: #202124;">Company</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 500; color: #202124;">Status</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 500; color: #202124;">Created Date</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 500; color: #202124;">Deadline</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if transmittals %}
+                    {% for transmittal in transmittals %}
+                    <tr style="border-bottom: 1px solid #dadce0; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'">
+                        <td style="padding: 12px 16px;">
+                            <a href="{% url 'transmittals:external_detail' transmittal.id %}" style="color: #9c27b0; text-decoration: none; font-weight: 500;">
+                                {{ transmittal.reference_number }}
+                            </a>
+                        </td>
+                        <td style="padding: 12px 16px;">
+                            {% if transmittal.main_type == 'for_keep' %}
+                                <span style="display: inline-block; padding: 4px 8px; background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; font-size: 12px; font-weight: 500;">FOR KEEP</span>
+                            {% else %}
+                                <span style="display: inline-block; padding: 4px 8px; background-color: #ede7f6; color: #4527a0; border-radius: 4px; font-size: 12px; font-weight: 500;">FOR RETURN</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px;">
+                            {% if transmittal.sub_type == 'full' %}
+                                <span style="display: inline-block; padding: 3px 6px; background-color: #e8f5e9; color: #1b5e20; border-radius: 4px; font-size: 11px;">Full Return</span>
+                            {% elif transmittal.sub_type == 'partial' %}
+                                <span style="display: inline-block; padding: 3px 6px; background-color: #fff3e0; color: #bf360c; border-radius: 4px; font-size: 11px;">Partial</span>
+                            {% elif transmittal.sub_type == 'for_sample' %}
+                                <span style="display: inline-block; padding: 3px 6px; background-color: #e0f7fa; color: #006064; border-radius: 4px; font-size: 11px;">Paid Sample</span>
+                            {% elif transmittal.sub_type == 'for_keep' %}
+                                <span style="display: inline-block; padding: 3px 6px; background-color: #fce4ec; color: #880e4f; border-radius: 4px; font-size: 11px;">For Keep</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px;">{{ transmittal.recipient_name }}</td>
+                        <td style="padding: 12px 16px;">{{ transmittal.recipient_company_name }}</td>
+                        <td style="padding: 12px 16px;">
+                            {% if transmittal.status == 'in_transit' %}
+                                <span style="display: inline-block; padding: 4px 8px; background-color: #e3f2fd; color: #1565c0; border-radius: 4px; font-size: 12px; font-weight: 500;">IN TRANSIT</span>
+                            {% elif transmittal.status == 'received' and transmittal.received_status == 'open' %}
+                                <span style="display: inline-block; padding: 4px 8px; background-color: #fff8e1; color: #f57f17; border-radius: 4px; font-size: 12px; font-weight: 500;">OPEN</span>
+                            {% elif transmittal.status == 'received' and transmittal.received_status == 'closed' %}
+                                <span style="display: inline-block; padding: 4px 8px; background-color: #e8f5e9; color: #1b5e20; border-radius: 4px; font-size: 12px; font-weight: 500;">CLOSED</span>
+                            {% elif transmittal.status == 'closed' %}
+                                <span style="display: inline-block; padding: 4px 8px; background-color: #e8f5e9; color: #1b5e20; border-radius: 4px; font-size: 12px; font-weight: 500;">CLOSED</span>
+                            {% elif transmittal.status == 'cancelled' %}
+                                <span style="display: inline-block; padding: 4px 8px; background-color: #fce4ec; color: #c62828; border-radius: 4px; font-size: 12px; font-weight: 500;">CANCELLED</span>
+                            {% else %}
+                                <span style="display: inline-block; padding: 4px 8px; background-color: #e2e3e5; color: #383d41; border-radius: 4px; font-size: 12px; font-weight: 500;">{{ transmittal.get_status_display|upper }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px;">
+                            {% if transmittal.created_at %}
+                                {{ transmittal.created_at|date:"M d, Y H:i" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px;">
+                            {% if transmittal.date_deadline %}
+                                {{ transmittal.date_deadline|date:"M d, Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="padding: 32px; text-align: center; color: #5f6368;">
+                            No transmittals found matching your filters.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

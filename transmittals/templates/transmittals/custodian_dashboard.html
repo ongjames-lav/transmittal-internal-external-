@@ -1,0 +1,188 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}Custodian{% endblock %}
+
+{% block content %}
+<div style="background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <!-- Header -->
+    <div style="padding: 24px; border-bottom: 1px solid #dadce0;">
+        <div style="display: flex; gap: 24px;">
+            <!-- Avatar -->
+            <div style="flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; min-width: 100px;">
+                <div
+                    style="width: 80px; height: 80px; border-radius: 50%; background-color: #f1f3f4; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #dadce0; margin-bottom: 8px;">
+                    {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="Profile Picture"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    <span class="material-icons" style="font-size: 40px; color: #dadce0;">person</span>
+                    {% endif %}
+                </div>
+                <a href="{% url 'accounts:edit_profile' %}" class="btn btn-secondary"
+                    style="font-size: 11px; padding: 4px 8px;">
+                    <span class="material-icons"
+                        style="font-size: 14px; margin-right: 2px; vertical-align: text-bottom;">edit</span> Edit
+                    Profile
+                </a>
+            </div>
+
+            <div style="flex: 1;">
+                <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 500;">Welcome, {{ user.first_name }}!</h1>
+                <div style="color: #5f6368;">Custodian for <span id="location-name-display"
+                        style="font-weight: 600; color: #1a73e8;"></span></div>
+                <script>document.getElementById('location-name-display').textContent = "{{ location.name }}";</script>
+                <div style="margin-top: 8px; font-size: 13px; color: #5f6368;">
+                    Manage incoming shipments, mark items as arrived, and verify deliveries.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 24px;">
+        <!-- Stats Cards -->
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 32px;">
+            <!-- In Transit Card -->
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px; border-radius: 4px;">
+                <div id="in-transit-count" style="font-size: 24px; font-weight: 600; color: #856404;"></div>
+                <script>document.getElementById('in-transit-count').textContent = "{{ in_transit_count }}";</script>
+                <div style="font-size: 14px; color: #856404; margin-top: 4px;">In Transit</div>
+                <a href="{% url 'transmittals:custodian_in_transit' %}"
+                    style="margin-top: 8px; display: inline-block; color: #0066cc; text-decoration: none;">View All
+                    →</a>
+            </div>
+
+            <!-- Arrived Card -->
+            <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 16px; border-radius: 4px;">
+                <div id="arrived-count" style="font-size: 24px; font-weight: 600; color: #155724;"></div>
+                <script>document.getElementById('arrived-count').textContent = "{{ arrived_count }}";</script>
+                <div style="font-size: 14px; color: #155724; margin-top: 4px;">Arrived</div>
+                <a href="{% url 'transmittals:custodian_arrived' %}"
+                    style="margin-top: 8px; display: inline-block; color: #0066cc; text-decoration: none;">View All
+                    →</a>
+            </div>
+
+            <!-- Picked Card -->
+            <div style="background-color: #f3e8ff; border-left: 4px solid #6f42c1; padding: 16px; border-radius: 4px;">
+                <div id="picked-count" style="font-size: 24px; font-weight: 600; color: #6f42c1;"></div>
+                <script>document.getElementById('picked-count').textContent = "{{ picked_count }}";</script>
+                <div style="font-size: 14px; color: #6f42c1; margin-top: 4px;">Picked Up</div>
+                <a href="{% url 'transmittals:custodian_picked' %}"
+                    style="margin-top: 8px; display: inline-block; color: #0066cc; text-decoration: none;">View All
+                    →</a>
+            </div>
+
+            <!-- Received Card -->
+            <div style="background-color: #d1ecf1; border-left: 4px solid #17a2b8; padding: 16px; border-radius: 4px;">
+                <div id="received-count" style="font-size: 24px; font-weight: 600; color: #0c5460;"></div>
+                <script>document.getElementById('received-count').textContent = "{{ received_count }}";</script>
+                <div style="font-size: 14px; color: #0c5460; margin-top: 4px;">Received</div>
+                <a href="{% url 'transmittals:custodian_received' %}"
+                    style="margin-top: 8px; display: inline-block; color: #0066cc; text-decoration: none;">View All
+                    →</a>
+            </div>
+        </div>
+
+        <!-- In Transit Items -->
+        <div style="margin-bottom: 32px;">
+            <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 500;">Recent In Transit Items</h2>
+            {% if in_transit %}
+            <div style="border: 1px solid #dadce0; border-radius: 4px; overflow: hidden;">
+                {% for transmittal in in_transit|slice:":5" %}
+                <div style="padding: 12px 16px; border-bottom: 1px solid #dadce0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background-color 0.2s;"
+                    onclick="window.location='{% url 'transmittals:detail' transmittal.id %}';"
+                    onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'">
+                    <div>
+                        <div style="font-weight: 500;">Ref: {{ transmittal.reference_number }}</div>
+                        <div style="font-size: 13px; color: #5f6368; margin-top: 4px;">From: <span
+                                id="s-in-{{ transmittal.id }}"></span></div>
+                        <script>document.getElementById('s-in-{{ transmittal.id }}').textContent = "{{ transmittal.sender.profile.get_full_name }}";</script>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 13px; color: #5f6368;">{{ transmittal.sent_at|date:"M d, Y" }}</div>
+                        <span
+                            style="display: inline-block; background-color: #ffc107; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-top: 4px;">In
+                            Transit</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div
+                style="padding: 32px; text-align: center; color: #5f6368; background-color: #f8f9fa; border-radius: 4px;">
+                <div style="margin-bottom: 8px;"><span class="material-icons"
+                        style="font-size: 48px; color: #dadce0;">local_shipping</span></div>
+                <div>No items in transit</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Arrived Items -->
+        <div style="margin-bottom: 32px;">
+            <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 500;">Recent Arrived Items</h2>
+            {% if arrived %}
+            <div style="border: 1px solid #dadce0; border-radius: 4px; overflow: hidden;">
+                {% for transmittal in arrived|slice:":5" %}
+                <div style="padding: 12px 16px; border-bottom: 1px solid #dadce0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background-color 0.2s;"
+                    onclick="window.location='{% url 'transmittals:detail' transmittal.id %}';"
+                    onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'">
+                    <div>
+                        <div style="font-weight: 500;">Ref: {{ transmittal.reference_number }}</div>
+                        <div style="font-size: 13px; color: #5f6368; margin-top: 4px;">From: <span
+                                id="s-ar-{{ transmittal.id }}"></span></div>
+                        <script>document.getElementById('s-ar-{{ transmittal.id }}').textContent = "{{ transmittal.sender.profile.get_full_name }}";</script>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 13px; color: #5f6368;">{{ transmittal.sent_at|date:"M d, Y" }}</div>
+                        <span
+                            style="display: inline-block; background-color: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-top: 4px;">Arrived</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div
+                style="padding: 32px; text-align: center; color: #5f6368; background-color: #f8f9fa; border-radius: 4px;">
+                <div style="margin-bottom: 8px;"><span class="material-icons"
+                        style="font-size: 48px; color: #dadce0;">check_circle</span></div>
+                <div>No arrived items</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Picked Items -->
+        <div style="margin-bottom: 32px;">
+            <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 500;">Recent Picked Items</h2>
+            {% if picked %}
+            <div style="border: 1px solid #dadce0; border-radius: 4px; overflow: hidden;">
+                {% for transmittal in picked|slice:":5" %}
+                <div style="padding: 12px 16px; border-bottom: 1px solid #dadce0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background-color 0.2s;"
+                    onclick="window.location='{% url 'transmittals:detail' transmittal.id %}';"
+                    onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'">
+                    <div>
+                        <div style="font-weight: 500;">Ref: {{ transmittal.reference_number }}</div>
+                        <div style="font-size: 13px; color: #5f6368; margin-top: 4px;">From: <span
+                                id="s-pk-{{ transmittal.id }}"></span></div>
+                        <script>document.getElementById('s-pk-{{ transmittal.id }}').textContent = "{{ transmittal.sender.profile.get_full_name }}";</script>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 13px; color: #5f6368;">{{ transmittal.sent_at|date:"M d, Y" }}</div>
+                        <span
+                            style="display: inline-block; background-color: #6f42c1; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-top: 4px;">Picked Up</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div
+                style="padding: 32px; text-align: center; color: #5f6368; background-color: #f8f9fa; border-radius: 4px;">
+                <div style="margin-bottom: 8px;"><span class="material-icons"
+                        style="font-size: 48px; color: #dadce0;">back_hand</span></div>
+                <div>No picked up items</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

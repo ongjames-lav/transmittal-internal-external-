@@ -1,0 +1,103 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Admin Login{% endblock %}
+
+{% block content %}
+<style>
+    .admin-login-container {
+        max-width: 400px;
+        margin: 50px auto;
+        padding: 30px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-top: 4px solid #2c3e50;
+    }
+    .admin-login-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .admin-login-header h1 {
+        color: #2c3e50;
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    .admin-badge {
+        background: #2c3e50;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #7f8c8d;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #dfe6e9;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+    .login-btn {
+        width: 100%;
+        padding: 12px;
+        background: #2c3e50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    .login-btn:hover {
+        background: #34495e;
+    }
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #7f8c8d;
+        text-decoration: none;
+        font-size: 14px;
+    }
+</style>
+
+<div class="admin-login-container">
+    <div class="admin-login-header">
+        <span class="admin-badge">Secure Access</span>
+        <h1>Admin Portal</h1>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+            <div class="alert alert-danger" style="color: #e74c3c; margin-bottom: 20px; text-align: center;">
+                Invalid username or password.
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="id_username">Username</label>
+            <input type="text" name="username" id="id_username" required autocomplete="username">
+        </div>
+        
+        <div class="form-group">
+            <label for="id_password">Password</label>
+            <input type="password" name="password" id="id_password" required autocomplete="current-password">
+        </div>
+        
+        <button type="submit" class="login-btn">Login to Admin Dashboard</button>
+    </form>
+
+    <a href="{% url 'accounts:login' %}" class="back-link">← Go to User Login</a>
+</div>
+{% endblock %}

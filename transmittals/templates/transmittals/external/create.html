@@ -1,0 +1,443 @@
+{% extends 'transmittals/external_base.html' %}
+{% load static %}
+
+{% block title %}Compose External Transmittal | Transmittal System{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Gmail-Inspired Color Palette */
+    :root {
+        --gmail-blue: #1a73e8;
+        --gmail-blue-hover: #1765cc;
+        --gmail-red: #ea4335;
+        --gmail-gray: #5f6368;
+        --gmail-light-gray: #f1f3f4;
+        --gmail-border: #dadce0;
+        --gmail-text: #202124;
+    }
+
+    /* Main Container */
+    .gmail-container {
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+
+    /* Gmail-style Card */
+    .gmail-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    .gmail-card-header {
+        background: var(--gmail-light-gray);
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--gmail-border);
+    }
+
+    .gmail-card-header h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--gmail-text);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .gmail-card-body {
+        padding: 24px;
+    }
+
+    /* Sender Info Section */
+    .sender-info {
+        background: var(--gmail-light-gray);
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        border-left: 4px solid var(--gmail-blue);
+    }
+
+    .sender-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+    }
+
+    .sender-info-item {
+        display: flex;
+        gap: 8px;
+        font-size: 13px;
+    }
+
+    .sender-info-label {
+        font-weight: 500;
+        color: var(--gmail-gray);
+        min-width: 80px;
+    }
+
+    .sender-info-value {
+        color: var(--gmail-text);
+    }
+
+    /* Form Styling */
+    .gmail-form-group {
+        margin-bottom: 20px;
+    }
+
+    .gmail-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gmail-text);
+    }
+
+    .gmail-input,
+    .gmail-select,
+    .gmail-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--gmail-border);
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: white;
+        box-sizing: border-box;
+    }
+
+    .gmail-input:focus,
+    .gmail-select:focus,
+    .gmail-textarea:focus {
+        outline: none;
+        border-color: var(--gmail-blue);
+        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 600px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .help-text {
+        font-size: 12px;
+        color: var(--gmail-gray);
+        margin-top: 5px;
+    }
+
+    .errorlist {
+        color: var(--gmail-red);
+        font-size: 12px;
+        margin-top: 4px;
+        list-style: none;
+        padding: 0;
+    }
+
+    .required-star {
+        color: var(--gmail-red);
+    }
+
+    /* Mode Info Box */
+    .type-info-box {
+        padding: 12px;
+        background: #e3f2fd;
+        border-left: 4px solid var(--gmail-blue);
+        border-radius: 4px;
+        font-size: 13px;
+        margin-top: 8px;
+        line-height: 1.6;
+    }
+
+    /* Action Buttons */
+    .button-group {
+        display: flex;
+        gap: 12px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gmail-border);
+        margin-top: 24px;
+    }
+
+    .btn-gmail-primary {
+        background: var(--gmail-blue);
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+
+    .btn-gmail-primary:hover {
+        background: var(--gmail-blue-hover);
+        box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);
+    }
+
+    .btn-gmail-secondary {
+        background: white;
+        color: var(--gmail-gray);
+        border: 1px solid var(--gmail-border);
+        padding: 10px 24px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+
+    .btn-gmail-secondary:hover {
+        background: var(--gmail-light-gray);
+    }
+
+    /* Loading Button State */
+    .btn-gmail-primary:disabled {
+        background: #80868b;
+        cursor: not-allowed;
+        opacity: 0.9;
+    }
+
+    .btn-gmail-primary.loading {
+        position: relative;
+        pointer-events: none;
+    }
+
+    .btn-gmail-primary.loading::after {
+        content: '';
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-left: 8px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Return fields logic */
+    .return-dates-section {
+        display: none;
+    }
+
+    .return-dates-section.visible {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gmail-container">
+    <div class="gmail-card">
+        <div class="gmail-card-header">
+            <h2><span class="material-icons">edit</span> New External Transmittal</h2>
+        </div>
+
+        <div class="gmail-card-body">
+            <!-- Sender Information -->
+            <div class="sender-info">
+                <div style="font-weight: 500; margin-bottom: 12px; color: var(--gmail-text); font-size: 14px;">From
+                </div>
+                <div class="sender-info-grid">
+                    <div class="sender-info-item">
+                        <span class="sender-info-label">Name:</span>
+                        <span class="sender-info-value">{{ user.get_full_name|default:user.username }}</span>
+                    </div>
+                    <div class="sender-info-item">
+                        <span class="sender-info-label">Department:</span>
+                        <span class="sender-info-value">{{ user.profile.department.name|default:"N/A" }}</span>
+                    </div>
+                    <div class="sender-info-item">
+                        <span class="sender-info-label">Date:</span>
+                        <span class="sender-info-value">{% now "F d, Y" %}</span>
+                    </div>
+                    <div class="sender-info-item">
+                        <span class="sender-info-label">Time:</span>
+                        <span class="sender-info-value">{% now "H:i" %}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if form.errors %}
+            <div
+                style="background-color: #fce8e6; color: #c5221f; padding: 12px; border-radius: 4px; margin-bottom: 24px; border: 1px solid #fad2cf; font-size: 13px;">
+                <strong>Form Errors:</strong>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                    <li>{{ field|title }}: {{ error }}</li>
+                    {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- TYPE SELECTION -->
+                <div class="gmail-form-group">
+                    <label class="gmail-label" for="{{ form.main_type.id_for_label }}">
+                        Transmittal Type <span class="required-star">*</span>
+                    </label>
+                    {{ form.main_type }}
+                </div>
+
+                <!-- RETURN DATE (Hidden unless For Return) -->
+                <div id="return-dates" class="return-dates-section">
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="{{ form.date_return.id_for_label }}">
+                            Date of Return <span class="required-star">*</span>
+                        </label>
+                        {{ form.date_return }}
+                        <div class="help-text">The date the item is expected to be returned.</div>
+                    </div>
+                </div>
+
+                <div style="height: 1px; background: var(--gmail-border); margin: 30px 0;"></div>
+
+                <!-- RECIPIENT INFO -->
+                <div class="form-row">
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="{{ form.recipient_name.id_for_label }}">
+                            Recipient Name <span class="required-star">*</span>
+                        </label>
+                        {{ form.recipient_name }}
+                    </div>
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="{{ form.recipient_email.id_for_label }}">
+                            Email Address <span class="required-star">*</span>
+                        </label>
+                        {{ form.recipient_email }}
+                        <div class="help-text">Separate multiple emails with commas (e.g., user1@email.com, user2@email.com)</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="gmail-form-group">
+                        <label class="gmail-label" for="{{ form.recipient_company_name.id_for_label }}">Company
+                            Name <span class="required-star">*</span></label>
+                        {{ form.recipient_company_name }}
+                    </div>
+                </div>
+
+                <div class="gmail-form-group">
+                    <label class="gmail-label" for="{{ form.recipient_company_address.id_for_label }}">Company
+                        Address <span class="required-star">*</span></label>
+                    {{ form.recipient_company_address }}
+                </div>
+
+                <div style="height: 1px; background: var(--gmail-border); margin: 30px 0;"></div>
+
+                <!-- DETAILS -->
+                <div class="gmail-form-group">
+                    <label class="gmail-label" for="{{ form.description.id_for_label }}">
+                        Description <span class="required-star">*</span>
+                    </label>
+                    {{ form.description }}
+                    <div class="help-text">List of items and their details.</div>
+                </div>
+
+                <div class="gmail-form-group">
+                    <label class="gmail-label" for="{{ form.remarks.id_for_label }}">Remarks (Optional)</label>
+                    {{ form.remarks }}
+                </div>
+
+                <div class="gmail-form-group">
+                    <label class="gmail-label" for="{{ form.attachment.id_for_label }}">
+                        <span class="material-icons"
+                            style="font-size: 18px; vertical-align: middle; margin-right: 6px;">attach_file</span>
+                        Attachments (Optional)
+                    </label>
+                    {{ form.attachment }}
+                    <div class="help-text">{{ form.attachment.help_text }}</div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" id="submitBtn" class="btn-gmail-primary">
+                        <span class="material-icons">send</span>
+                        Submit Transmittal
+                    </button>
+                    <a href="{% url 'transmittals:external_inbox' %}{% if user.is_authenticated %}?email={{ user.email }}{% endif %}"
+                        class="btn-gmail-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Add Gmail generic classes to form widgets
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputs = document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea');
+        inputs.forEach(el => {
+            if (el.tagName === 'SELECT') el.classList.add('gmail-select');
+            else if (el.tagName === 'TEXTAREA') el.classList.add('gmail-textarea');
+            else if (el.type !== 'file') el.classList.add('gmail-input');
+        });
+
+        const typeSelect = document.getElementById('id_main_type') || document.querySelector('[name="main_type"]');
+        const returnDates = document.getElementById('return-dates');
+
+        function toggleReturnDates() {
+            if (typeSelect.value === 'for_return') {
+                returnDates.classList.add('visible');
+                // Ensure date input is required if visible
+                const dateReturn = document.querySelector('[name="date_return"]');
+                if (dateReturn) dateReturn.required = true;
+            } else {
+                returnDates.classList.remove('visible');
+                const dateReturn = document.querySelector('[name="date_return"]');
+                if (dateReturn) {
+                    dateReturn.required = false;
+                    dateReturn.value = '';
+                }
+            }
+        }
+
+        if (typeSelect) {
+            typeSelect.addEventListener('change', toggleReturnDates);
+            toggleReturnDates();
+        }
+
+        // Loading button functionality
+        const form = document.querySelector('form');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form && submitBtn) {
+            form.addEventListener('submit', function () {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('loading');
+                submitBtn.innerHTML = '<span class="material-icons">schedule</span> Submitting...';
+            });
+        }
+    });
+</script>
+{% endblock %}

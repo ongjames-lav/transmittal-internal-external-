@@ -1,0 +1,995 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}External Transmittal System{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/cdc-logo-round.png' %}">
+    <style>
+        /* ============================================
+           GMAIL-INSPIRED DESIGN (matches internal system)
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gmail-blue: #1a73e8;
+            --gmail-blue-hover: #1765cc;
+            --gmail-red: #ea4335;
+            --gmail-green: #1e8e3e;
+            --gmail-yellow: #f9ab00;
+            --ext-purple: #9c27b0;
+            --ext-purple-hover: #7b1fa2;
+            --gray-900: #202124;
+            --gray-700: #5f6368;
+            --gray-200: #e8eaed;
+            --gray-100: #f1f3f4;
+            --border-gray: #dadce0;
+            --white: #ffffff;
+            --hover-bg: #f1f3f4;
+            --font-family: 'Google Sans', 'Segoe UI', Arial, sans-serif;
+        }
+
+        @font-face {
+            font-family: 'Material Icons';
+            font-style: normal;
+            font-weight: 400;
+            src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
+        }
+
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: var(--font-family);
+            font-size: 14px;
+            color: var(--gray-900);
+            background: var(--white);
+            line-height: 1.5;
+        }
+
+        /* ---- TOP APP BAR ---- */
+        .gmail-topbar {
+            height: 64px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border-gray);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .menu-toggle {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+            cursor: pointer;
+            color: var(--gray-700);
+            transition: background 0.2s;
+        }
+
+        .menu-toggle:hover {
+            background: var(--hover-bg);
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 24px;
+            text-decoration: none;
+            color: var(--gray-700);
+            font-size: 20px;
+            font-weight: 400;
+        }
+
+        .topbar-logo:hover {
+            color: var(--gray-900);
+        }
+
+        .ext-badge {
+            font-size: 11px;
+            font-weight: 700;
+            background: var(--ext-purple);
+            color: white;
+            padding: 2px 7px;
+            border-radius: 10px;
+            letter-spacing: .5px;
+        }
+
+        /* Search Suggestions */
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 720px;
+            margin-right: 24px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid var(--border-gray);
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            background: var(--white);
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            background: var(--white);
+            box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+        }
+
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-gray);
+            border-top: none;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 0;
+        }
+
+        .search-suggestions.show {
+            display: block;
+        }
+
+        /* Active Search Input Style */
+        .search-input.active {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: transparent;
+            background: var(--white);
+            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+        }
+
+        .suggestion-item {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f3f4;
+            background: var(--white);
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f1f3f4;
+        }
+
+        .suggestion-icon {
+            margin-right: 12px;
+            color: var(--gray-700);
+            display: flex;
+            align-items: center;
+        }
+
+        .suggestion-content {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .suggestion-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #202124;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .suggestion-type {
+            font-size: 12px;
+            font-weight: 400;
+            color: #5f6368;
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .suggestion-subtitle {
+            font-size: 12px;
+            color: #5f6368;
+            margin-top: 2px;
+        }
+
+        .topbar-utilities {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .utility-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+        .utility-icon:hover {
+            background: var(--hover-bg);
+        }
+
+        .user-avatar {
+            background: var(--ext-purple);
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        /* ---- LAYOUT ---- */
+        .gmail-layout {
+            display: flex;
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ---- SIDEBAR ---- */
+        .gmail-sidebar {
+            width: 300px;
+            background: var(--white);
+            border-right: 1px solid var(--border-gray);
+            padding: 8px 0;
+            position: fixed;
+            left: 0;
+            top: 64px;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        /* Sub-navigation inside sidebar (for inbox hierarchy) */
+        .nav-subnav {
+            list-style: none;
+            overflow: hidden;
+            transition: max-height 0.25s ease;
+            max-height: 0;
+        }
+
+        .nav-subnav.open {
+            max-height: 400px;
+        }
+
+        .nav-sublink {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 12px 7px 44px;
+            color: var(--gray-900);
+            text-decoration: none;
+            border-radius: 0 20px 20px 0;
+            transition: background 0.15s;
+            font-size: 13px;
+            font-weight: 400;
+        }
+
+        .nav-sublink:hover {
+            background: var(--hover-bg);
+        }
+
+        .nav-sublink.active {
+            background: rgba(156, 39, 176, 0.10);
+            color: var(--ext-purple);
+            font-weight: 600;
+        }
+
+        .nav-subsublink {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px 6px 60px;
+            color: var(--gray-700);
+            text-decoration: none;
+            border-radius: 0 20px 20px 0;
+            transition: background 0.15s;
+            font-size: 12.5px;
+            font-weight: 400;
+        }
+
+        .nav-subsublink:hover {
+            background: var(--hover-bg);
+        }
+
+        .nav-subsublink.active {
+            background: rgba(156, 39, 176, 0.08);
+            color: var(--ext-purple);
+            font-weight: 600;
+        }
+
+        .nav-count {
+            margin-left: 8px;
+            margin-right: 6px;
+            background: #f1f3f4;
+            color: #5f6368;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+            min-width: 20px;
+            text-align: center;
+            line-height: 1;
+            transition: all 0.2s;
+        }
+
+        .nav-link.active .nav-count,
+        .nav-sublink.active .nav-count,
+        .nav-subsublink.active .nav-count {
+            background: var(--ext-purple);
+            color: #fff;
+        }
+
+        .nav-expand-icon {
+            font-size: 16px;
+            color: var(--gray-700);
+            margin-left: auto;
+            transition: transform 0.2s;
+        }
+
+        .nav-link.expanded .nav-expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-compose {
+            margin: 8px 16px 16px;
+        }
+
+        .compose-btn {
+            width: 100%;
+            padding: 12px 24px;
+            background: var(--white);
+            color: var(--gray-900);
+            border: 1px solid var(--border-gray);
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+        }
+
+        .compose-btn:hover {
+            box-shadow: 0 1px 3px rgba(60, 64, 67, .3), 0 4px 8px 3px rgba(60, 64, 67, .15);
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gray-700);
+            text-transform: uppercase;
+            padding: 0 28px;
+            margin: 16px 0 4px;
+            letter-spacing: .5px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin: 2px 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 8px 12px 8px 24px;
+            color: var(--gray-900);
+            text-decoration: none;
+            border-radius: 0 20px 20px 0;
+            transition: background 0.2s;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .nav-link:hover {
+            background: var(--hover-bg);
+        }
+
+        .nav-link.active {
+            background: rgba(156, 39, 176, 0.12);
+            color: var(--ext-purple);
+        }
+
+        .nav-link .material-icons {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .nav-divider {
+            border: none;
+            border-top: 1px solid var(--border-gray);
+            margin: 8px 0;
+        }
+
+        /* ---- MAIN CONTENT ---- */
+        .gmail-main {
+            flex: 1;
+            margin-left: 300px;
+            padding: 24px;
+            background: var(--white);
+        }
+
+        /* ---- SIDEBAR OVERLAY (mobile) ---- */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            z-index: 40;
+            opacity: 0;
+            transition: opacity .3s;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 768px) {
+            .gmail-sidebar {
+                transform: translateX(-100%);
+                transition: transform .3s ease;
+                z-index: 50;
+                box-shadow: 2px 0 5px rgba(0, 0, 0, .2);
+            }
+
+            .gmail-sidebar.sidebar-open {
+                transform: translateX(0);
+            }
+
+            .gmail-main {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: flex !important;
+            }
+
+            .topbar-logo span {
+                display: none;
+            }
+        }
+
+        /* ---- SCROLLBAR ---- */
+        .gmail-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .gmail-sidebar::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        /* ---- BUTTONS ---- */
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all .2s;
+        }
+
+        .btn-primary {
+            background: var(--gmail-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--gmail-blue-hover);
+            box-shadow: 0 1px 3px rgba(26, 115, 232, .4);
+        }
+
+        .btn-purple {
+            background: var(--ext-purple);
+            color: white;
+        }
+
+        .btn-purple:hover {
+            background: var(--ext-purple-hover);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--gray-700);
+            border: 1px solid var(--border-gray);
+        }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg);
+        }
+
+        .btn-danger {
+            background: var(--gmail-red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d33426;
+        }
+
+        .btn-success {
+            background: var(--gmail-green);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #188038;
+        }
+
+        /* ---- STATUS BADGES ---- */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-transit {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .badge-open {
+            background: #fff8e1;
+            color: #f57f17;
+        }
+
+        .badge-closed {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        .badge-received {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        .badge-keep {
+            background: #fce4ec;
+            color: #880e4f;
+        }
+
+        .badge-return {
+            background: #ede7f6;
+            color: #4527a0;
+        }
+
+        .badge-partial {
+            background: #fff3e0;
+            color: #bf360c;
+        }
+
+        .badge-full {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        .badge-sample {
+            background: #e0f7fa;
+            color: #006064;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- TOP APP BAR -->
+    <div class="gmail-topbar">
+        <div class="menu-toggle" id="menuToggle">
+            <span class="material-icons">menu</span>
+        </div>
+
+        <a href="{% url 'transmittals:external_dashboard' %}" class="topbar-logo">
+            <img src="{% static 'images/cdc-logo.png' %}" alt="CDC Logo"
+                style="height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 1px solid #dadce0;">
+            <span>External Transmittal Report System</span>
+        </a>
+
+        <div class="search-container">
+            <input type="text" class="search-input" id="globalSearchInput" placeholder="Search Transmittal"
+                autocomplete="off">
+            <div class="search-suggestions" id="searchSuggestions"></div>
+        </div>
+
+        <div class="topbar-utilities">
+            {% if user.is_authenticated %}
+            <div style="margin-right: 12px; font-weight: 500; font-size: 14px; color: var(--gray-700);">
+                {{ user.get_full_name|default:user.username }}
+            </div>
+            <div class="utility-icon user-avatar" title="{{ user.get_full_name|default:user.username }}"
+                style="overflow:hidden;{% if user.profile.avatar %}background:none;{% endif %}">
+                {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">
+                {% else %}
+                {{ user.get_full_name.0|upper|default:user.username.0|upper }}
+                {% endif %}
+            </div>
+            <a href="{% url 'accounts:logout' %}" class="utility-icon" title="Logout"
+                style="margin-left: 12px; background-color: transparent; border-radius: 4px; padding: 8px 12px; text-decoration: none; color: #333; font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                <span class="material-icons" style="font-size:18px;">logout</span>
+            </a>
+            {% else %}
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary" style="padding:8px 18px;">
+                <span class="material-icons" style="font-size:18px;">login</span> Login
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="gmail-layout">
+        <!-- SIDEBAR -->
+        <aside class="gmail-sidebar" id="gmailSidebar">
+            <div class="sidebar-compose">
+                <a href="{% url 'transmittals:external_create' %}" class="compose-btn">
+                    <span class="material-icons" style="font-size:22px;color:var(--ext-purple);">edit</span>
+                    New External Transmittal
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:external_dashboard' %}"
+                        class="nav-link {% if '/external/dashboard/' in request.path or request.path == '/transmittals/external/' %}active{% endif %}">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- In Transit (main) -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:external_inbox' %}?status=in_transit"
+                        class="nav-link {% if active_section == 'in_transit' %}active{% endif %}">
+                        <span class="material-icons">local_shipping</span>
+                        <span>In Transit</span>
+                        {% if count_intransit %}<span class="nav-count">{{ count_intransit }}</span>{% endif %}
+                    </a>
+                </li>
+
+                <!-- Cancelled -->
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:external_inbox' %}?status=cancelled"
+                        class="nav-link {% if active_section == 'cancelled' %}active{% endif %}">
+                        <span class="material-icons">cancel</span>
+                        <span>Cancelled</span>
+                        {% if count_cancelled %}<span class="nav-count">{{ count_cancelled }}</span>{% endif %}
+                    </a>
+                </li>
+
+                <!-- Received (main, statically visible) -->
+                <li class="nav-item" id="nav-received-parent">
+                    <a href="{% url 'transmittals:external_inbox' %}?status=received" id="nav-received-toggle"
+                        class="nav-link {% if active_section == 'received' %}active{% endif %}">
+                        <span class="material-icons">send</span>
+                        <span>Outgoing</span>
+                        {% if count_received %}<span class="nav-count">{{ count_received }}</span>{% endif %}
+                    </a>
+                    <!-- Closed / Open sub-items injected directly -->
+                    <ul style="list-style: none;" id="nav-subnav-inbox">
+                        <!-- CLOSED (sub of Received) -->
+                        <li>
+                            <a href="{% url 'transmittals:external_inbox' %}?status=received&received_status=closed"
+                                class="nav-sublink {% if active_section == 'closed' %}active{% endif %}">
+                                <span class="material-icons" style="font-size:16px;">task_alt</span>
+                                Closed
+                                {% if count_closed %}<span class="nav-count">{{ count_closed }}</span>{% endif %}
+                            </a>
+                        </li>
+                         <li>
+                            <a href="{% url 'transmittals:external_inbox' %}?sub_type=for_keep"
+                                class="nav-subsublink {% if active_section == 'for_keep_sub' %}active{% endif %}">
+                                <span class="material-icons" style="font-size:14px;">save_as</span>
+                                ↳ Return/For Keep
+                                {% if count_keep %}<span class="nav-count">{{ count_keep }}</span>{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'transmittals:external_inbox' %}?sub_type=for_sample"
+                                class="nav-subsublink {% if active_section == 'paid_sample' %}active{% endif %}">
+                                <span class="material-icons" style="font-size:14px;">shopping_bag</span>
+                                ↳ Return/Paid Sample
+                                {% if count_sample %}<span class="nav-count">{{ count_sample }}</span>{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'transmittals:external_inbox' %}?sub_type=full"
+                                class="nav-subsublink {% if active_section == 'full_return' %}active{% endif %}">
+                                <span class="material-icons" style="font-size:14px;">assignment_return</span>
+                                ↳ Full Return
+                                {% if count_full %}<span class="nav-count">{{ count_full }}</span>{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'transmittals:external_inbox' %}?status=received&main_type=for_keep"
+                                class="nav-subsublink {% if main_type_filter == 'for_keep' %}active{% endif %}">
+                                <span class="material-icons" style="font-size:14px;">save</span>
+                                ↳ For Keep
+                                {% if count_for_keep_closed %}<span class="nav-count">{{ count_for_keep_closed }}</span>{% endif %}
+                            </a>
+                        </li>
+
+                        <!-- OPEN (sub of Received, with children) -->
+                        <li>
+                            <a href="{% url 'transmittals:external_inbox' %}?status=received&received_status=open"
+                                class="nav-sublink {% if active_section == 'open' %}active{% endif %}">
+                                <span class="material-icons" style="font-size:16px;">pending</span>
+                                Open
+                                {% if count_open %}<span class="nav-count">{{ count_open }}</span>{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'transmittals:external_inbox' %}?sub_type=partial"
+                                class="nav-subsublink {% if active_section == 'partial' %}active{% endif %}">
+                                <span class="material-icons" style="font-size:14px;">call_received</span>
+                                ↳ Partial
+                                {% if count_partial %}<span class="nav-count">{{ count_partial }}</span>{% endif %}
+                            </a>
+                        </li>
+            </ul>
+
+            <hr class="nav-divider">
+
+            {% if user.is_authenticated %}
+            <div class="sidebar-section-title">Tools</div>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:external_report' %}"
+                        class="nav-link {% if '/external/report/' in request.path %}active{% endif %}">
+                        <span class="material-icons">assessment</span>
+                        <span>Reports</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+            <hr class="nav-divider">
+
+            <div class="sidebar-section-title">Switch System</div>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="{% url 'accounts:dashboard' %}" class="nav-link">
+                        <span class="material-icons">swap_horiz</span>
+                        <span>Internal Transmittals</span>
+                    </a>
+                </li>
+            </ul>
+
+            <hr class="nav-divider">
+
+            <div class="sidebar-section-title">Help</div>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="{% url 'transmittals:flow_info' %}" class="nav-link">
+                        <span class="material-icons">help_outline</span>
+                        <span>How It Works</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="gmail-main">
+            {% if messages %}
+            {% for message in messages %}
+            <div
+                style="padding:12px 16px;border-radius:4px;margin-bottom:16px;
+                                background:{% if message.tags == 'error' %}#fce4ec{% else %}#e8f5e9{% endif %};
+                                color:{% if message.tags == 'error' %}#c2185b{% else %}#2e7d32{% endif %};
+                                border-left:4px solid {% if message.tags == 'error' %}#c2185b{% else %}#2e7d32{% endif %};">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        // Mobile sidebar toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('gmailSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('sidebar-open');
+                overlay.classList.toggle('show');
+            });
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('sidebar-open');
+                overlay.classList.remove('show');
+            });
+        }
+
+        // Toggle collapsible sub-nav in sidebar
+        function toggleNavSub(e, subnavId, linkEl) {
+            const subnav = document.getElementById(subnavId);
+            if (!subnav) return; // no sub-nav registered (non-inbox pages)
+
+            const isOpen = subnav.classList.contains('open');
+
+            // If clicking the link itself (not just toggling), navigate when already open
+            if (isOpen) {
+                // Collapse and navigate
+                subnav.classList.remove('open');
+                linkEl.classList.remove('expanded');
+                window.location = linkEl.href;
+            } else {
+                // Open and navigate
+                subnav.classList.add('open');
+                linkEl.classList.add('expanded');
+                window.location = linkEl.href;
+            }
+            e.preventDefault();
+        }
+
+        // On load: auto-open sub-nav if on inbox page
+        document.addEventListener('DOMContentLoaded', function () {
+            const subnav = document.getElementById('nav-subnav-inbox');
+            const toggle = document.getElementById('nav-received-toggle');
+            if (subnav && subnav.children.length > 0) {
+                subnav.classList.add('open');
+                if (toggle) toggle.classList.add('expanded');
+            }
+        });
+
+        // Search functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('globalSearchInput');
+            const suggestionsBox = document.getElementById('searchSuggestions');
+            let debounceTimer;
+
+            searchInput.addEventListener('input', function () {
+                const query = this.value.trim();
+                clearTimeout(debounceTimer);
+
+                if (query.length < 2) {
+                    suggestionsBox.classList.remove('show');
+                    searchInput.classList.remove('active');
+                    suggestionsBox.innerHTML = '';
+                    return;
+                }
+
+                debounceTimer = setTimeout(() => {
+                    fetchSuggestions(query);
+                }, 300);
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                    suggestionsBox.classList.remove('show');
+                }
+            });
+
+            // Show suggestions again if focused and has content
+            searchInput.addEventListener('focus', function () {
+                if (this.value.trim().length >= 2) {
+                    fetchSuggestions(this.value.trim());
+                }
+            });
+
+            async function fetchSuggestions(query) {
+                try {
+                    const response = await fetch(`/transmittals/api/search/suggestions/?q=${encodeURIComponent(query)}&system=external`);
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+                    renderSuggestions(data.results);
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }
+
+            function renderSuggestions(results) {
+                if (!results || results.length === 0) {
+                    suggestionsBox.classList.remove('show');
+                    searchInput.classList.remove('active');
+                    return;
+                }
+
+                let html = '';
+                results.forEach(item => {
+                    let icon = 'email'; // default
+                    if (item.type === 'Reference') icon = 'confirmation_number';
+                    else if (item.type === 'Person') icon = 'person';
+                    else if (item.type === 'Description') icon = 'description';
+
+                    html += `
+                        <div class="suggestion-item" onclick="window.location.href='/transmittals/external/detail/${item.id}/'">
+                            <div class="suggestion-icon">
+                                <span class="material-icons" style="font-size: 20px;">${icon}</span>
+                            </div>
+                            <div class="suggestion-content">
+                                <div class="suggestion-title">
+                                    ${escapeHtml(item.title)}
+                                    <span class="suggestion-type">${item.type}</span>
+                                </div>
+                                <div class="suggestion-subtitle">${escapeHtml(item.subtitle)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                suggestionsBox.innerHTML = html;
+                suggestionsBox.classList.add('show');
+                searchInput.classList.add('active');
+            }
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

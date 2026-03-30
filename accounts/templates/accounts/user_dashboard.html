@@ -1,0 +1,342 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}My Dashboard{% endblock %}
+
+{% block content %}
+<div style="background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <!-- Header -->
+    <div style="padding: 24px; border-bottom: 1px solid #dadce0;">
+        <div style="display: flex; gap: 24px;">
+            <!-- Avatar -->
+            <div style="flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; min-width: 100px;">
+                <div
+                    style="width: 80px; height: 80px; border-radius: 50%; background-color: #f1f3f4; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #dadce0; margin-bottom: 8px;">
+                    {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="Profile Picture"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    <span class="material-icons" style="font-size: 40px; color: #dadce0;">person</span>
+                    {% endif %}
+                </div>
+                <a href="{% url 'accounts:edit_profile' %}" class="btn btn-secondary"
+                    style="font-size: 11px; padding: 4px 8px;">
+                    <span class="material-icons"
+                        style="font-size: 14px; margin-right: 2px; vertical-align: text-bottom;">edit</span> Edit
+                    Profile
+                </a>
+                <button onclick="openChangePasswordModal()" class="btn btn-secondary"
+                    style="font-size: 11px; padding: 4px 8px; margin-top: 8px;">
+                    <span class="material-icons"
+                        style="font-size: 14px; margin-right: 2px; vertical-align: text-bottom;">lock</span> Change
+                    Password
+                </button>
+            </div>
+
+            <div style="flex: 1;">
+                <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 500;">Welcome, {{ user.first_name }}!</h1>
+                <div style="color: #5f6368;"><span id="department-name-display" data-department-id="{% if current_department %}{{ current_department.id }}{% endif %}"></span> - <span
+                        id="company-name-display" style="font-weight: 600; color: #1a73e8;"></span></div>
+                <script>document.getElementById('department-name-display').textContent = "{{ current_department_name }}"; document.getElementById('company-name-display').textContent = "{{ user.profile.company }}";</script>
+                <div style="margin-top: 8px; font-size: 13px; color: #5f6368;">
+                    Manage your transmittals and incoming items.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 24px;">
+        <!-- Stats Cards -->
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 32px;">
+            <!-- Inbox Card -->
+            <div style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 16px; border-radius: 4px;">
+                <div id="inbox-count" style="font-size: 24px; font-weight: 600; color: #1565c0;"></div>
+                <script>document.getElementById('inbox-count').textContent = "{{ inbox_count }}";</script>
+                <div style="font-size: 14px; color: #1565c0; margin-top: 4px;">Incoming</div>
+                <a href="{% url 'transmittals:inbox' %}"
+                    style="margin-top: 8px; display: inline-block; color: #0066cc; text-decoration: none;">View All
+                    →</a>
+            </div>
+
+            <!-- Arrived Card -->
+            <div style="background-color: #f3e5f5; border-left: 4px solid #9c27b0; padding: 16px; border-radius: 4px;">
+                <div id="arrived-count" style="font-size: 24px; font-weight: 600; color: #6a1b9a;"></div>
+                <script>document.getElementById('arrived-count').textContent = "{{ arrived_count }}";</script>
+                <div style="font-size: 14px; color: #6a1b9a; margin-top: 4px;">Arrived at <span
+                        id="user-location-display"></span></div>
+                <script>document.getElementById('user-location-display').textContent = "{{ user.profile.assigned_location.name }}";</script>
+                <a href="{% url 'transmittals:inbox' %}?status=arrived"
+                    style="margin-top: 8px; display: inline-block; color: #0066cc; text-decoration: none;">View All
+                    →</a>
+            </div>
+              <!-- Picked Card -->
+            <div style="background-color: #f3e8ff; border-left: 4px solid #6f42c1; padding: 16px; border-radius: 4px;">
+                <div id="picked-count" style="font-size: 24px; font-weight: 600; color: #6f42c1;"></div>
+                <script>document.getElementById('picked-count').textContent = "{{ picked_count }}";</script>
+                <div style="font-size: 14px; color: #6f42c1; margin-top: 4px;">Picked Up</div>
+                <a href="{% url 'transmittals:inbox' %}?status=picked"
+                    style="margin-top: 8px; display: inline-block; color: #0066cc; text-decoration: none;">View All
+                    →</a>
+            </div>
+            <!-- Received Card -->
+            <div style="background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 16px; border-radius: 4px;">
+                <div id="received-count" style="font-size: 24px; font-weight: 600; color: #2e7d32;"></div>
+                <script>document.getElementById('received-count').textContent = "{{ received_count }}";</script>
+                <div style="font-size: 14px; color: #2e7d32; margin-top: 4px;">Received</div>
+                <a href="{% url 'transmittals:inbox' %}?status=received"
+                    style="margin-top: 8px; display: inline-block; color: #0066cc; text-decoration: none;">View All
+                    →</a>
+            </div>
+        </div>
+
+        <!-- Inbox Items -->
+        <div style="margin-bottom: 32px;">
+            <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 500;">Recent Incoming Items</h2>
+            {% if inbox_items %}
+            <div style="border: 1px solid #dadce0; border-radius: 4px; overflow: hidden;">
+                {% for transmittal in inbox_items|slice:":5" %}
+                <div style="padding: 12px 16px; border-bottom: 1px solid #dadce0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background-color 0.2s;"
+                    onclick="window.location='{% url 'transmittals:detail' transmittal.id %}';"
+                    onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'">
+                    <div>
+                        <div style="font-weight: 500;">Ref: {{ transmittal.reference_number }}</div>
+                        <div style="font-size: 13px; color: #5f6368; margin-top: 4px;">From: <span
+                                id="s-in-{{ transmittal.id }}"></span></div>
+                        <script>document.getElementById('s-in-{{ transmittal.id }}').textContent = "{{ transmittal.sender.profile.get_full_name }}";</script>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 13px; color: #5f6368;">{{ transmittal.sent_at|date:"M d, Y" }}</div>
+                        <span
+                            style="display: inline-block; background-color: #2196f3; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-top: 4px;">Incoming</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div
+                style="padding: 32px; text-align: center; color: #5f6368; background-color: #f8f9fa; border-radius: 4px;">
+                <div style="margin-bottom: 8px;"><span class="material-icons"
+                        style="font-size: 48px; color: #dadce0;">mail</span></div>
+                <div>No incoming items</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Arrived Items -->
+        <div style="margin-bottom: 32px;">
+            <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 500;">Recent Arrived Items</h2>
+            {% if arrived_items %}
+            <div style="border: 1px solid #dadce0; border-radius: 4px; overflow: hidden;">
+                {% for transmittal in arrived_items|slice:":5" %}
+                <div style="padding: 12px 16px; border-bottom: 1px solid #dadce0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background-color 0.2s;"
+                    onclick="window.location='{% url 'transmittals:detail' transmittal.id %}';"
+                    onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'">
+                    <div>
+                        <div style="font-weight: 500;">Ref: {{ transmittal.reference_number }}</div>
+                        <div style="font-size: 13px; color: #5f6368; margin-top: 4px;">From: <span
+                                id="s-arrived-{{ transmittal.id }}"></span></div>
+                        <script>document.getElementById('s-arrived-{{ transmittal.id }}').textContent = "{{ transmittal.sender.profile.get_full_name }}";</script>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 13px; color: #5f6368;">{{ transmittal.sent_at|date:"M d, Y" }}</div>
+                        <span
+                            style="display: inline-block; background-color: #9c27b0; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-top: 4px;">Arrived</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div
+                style="padding: 32px; text-align: center; color: #5f6368; background-color: #f8f9fa; border-radius: 4px;">
+                <div style="margin-bottom: 8px;"><span class="material-icons"
+                        style="font-size: 48px; color: #dadce0;">local_shipping</span></div>
+                <div>No arrived items</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: white; border-radius: 8px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); width: 90%; max-width: 400px; padding: 0;">
+        <!-- Modal Header -->
+        <div
+            style="padding: 24px; border-bottom: 1px solid #dadce0; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 500;">Change Password</h2>
+            <button onclick="closeChangePasswordModal()"
+                style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                <span class="material-icons" style="font-size: 24px; color: #5f6368;">close</span>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <form id="changePasswordForm" style="padding: 24px;">
+            {% csrf_token %}
+
+            <!-- Current Password -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #202124; font-size: 14px;">
+                    Current Password
+                </label>
+                <input type="password" id="currentPassword" name="current_password" required
+                    style="width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+                <div id="currentPasswordError" style="color: #d32f2f; font-size: 12px; margin-top: 4px; display: none;">
+                </div>
+            </div>
+
+            <!-- New Password -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #202124; font-size: 14px;">
+                    New Password
+                </label>
+                <input type="password" id="newPassword" name="new_password" required
+                    style="width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+                <div style="font-size: 12px; color: #5f6368; margin-top: 4px;">
+                    Minimum 4 characters (letters and numbers)
+                </div>
+                <div id="newPasswordError" style="color: #d32f2f; font-size: 12px; margin-top: 4px; display: none;">
+                </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #202124; font-size: 14px;">
+                    Confirm New Password
+                </label>
+                <input type="password" id="confirmPassword" name="confirm_password" required
+                    style="width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+                <div id="confirmPasswordError" style="color: #d32f2f; font-size: 12px; margin-top: 4px; display: none;">
+                </div>
+            </div>
+        </form>
+
+        <!-- Modal Footer -->
+        <div
+            style="padding: 16px 24px; border-top: 1px solid #dadce0; display: flex; gap: 12px; justify-content: flex-end;">
+            <button onclick="closeChangePasswordModal()"
+                style="padding: 10px 24px; background: #f8f9fa; color: #202124; border: 1px solid #dadce0; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 14px;">
+                Cancel
+            </button>
+            <button onclick="submitChangePassword()"
+                style="padding: 10px 24px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 14px;">
+                Change Password
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    #changePasswordModal[style*="display: flex"] {
+        display: flex !important;
+    }
+</style>
+
+<script>
+    function openChangePasswordModal() {
+        document.getElementById('changePasswordModal').style.display = 'flex';
+        // Clear form
+        document.getElementById('changePasswordForm').reset();
+        clearErrors();
+    }
+
+    function closeChangePasswordModal() {
+        document.getElementById('changePasswordModal').style.display = 'none';
+        clearErrors();
+    }
+
+    function clearErrors() {
+        document.getElementById('currentPasswordError').style.display = 'none';
+        document.getElementById('newPasswordError').style.display = 'none';
+        document.getElementById('confirmPasswordError').style.display = 'none';
+    }
+
+    function submitChangePassword() {
+        clearErrors();
+
+        const currentPassword = document.getElementById('currentPassword').value.trim();
+        const newPassword = document.getElementById('newPassword').value.trim();
+        const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+        let hasError = false;
+
+        // Validation
+        if (!currentPassword) {
+            document.getElementById('currentPasswordError').textContent = 'Current password is required';
+            document.getElementById('currentPasswordError').style.display = 'block';
+            hasError = true;
+        }
+
+        if (!newPassword) {
+            document.getElementById('newPasswordError').textContent = 'New password is required';
+            document.getElementById('newPasswordError').style.display = 'block';
+            hasError = true;
+        } else if (newPassword.length < 4) {
+            document.getElementById('newPasswordError').textContent = 'Password must be at least 4 characters';
+            document.getElementById('newPasswordError').style.display = 'block';
+            hasError = true;
+        }
+
+        if (newPassword !== confirmPassword) {
+            document.getElementById('confirmPasswordError').textContent = 'Passwords do not match';
+            document.getElementById('confirmPasswordError').style.display = 'block';
+            hasError = true;
+        }
+
+        if (currentPassword === newPassword) {
+            document.getElementById('newPasswordError').textContent = 'New password must be different from current password';
+            document.getElementById('newPasswordError').style.display = 'block';
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        // Submit form
+        const form = new FormData();
+        form.append('current_password', currentPassword);
+        form.append('new_password', newPassword);
+        form.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        fetch('{% url "accounts:change_password" %}', {
+            method: 'POST',
+            body: form
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Password changed successfully!');
+                    closeChangePasswordModal();
+                } else {
+                    if (data.current_password_error) {
+                        document.getElementById('currentPasswordError').textContent = data.current_password_error;
+                        document.getElementById('currentPasswordError').style.display = 'block';
+                    }
+                    if (data.error) {
+                        alert(data.error);
+                    }
+                }
+            })
+            .catch(error => {
+                alert('Error changing password. Please try again.');
+                console.error('Error:', error);
+            });
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('changePasswordModal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeChangePasswordModal();
+        }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.getElementById('changePasswordModal').style.display === 'flex') {
+            closeChangePasswordModal();
+        }
+    });
+</script>
+{% endblock %}

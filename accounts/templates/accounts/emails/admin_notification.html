@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        td:first-child {
+            font-weight: 600;
+            width: 30%;
+            color: #667eea;
+        }
+        .button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>New User Registration</h1>
+        </div>
+        <div class="content">
+            <p>Hello Admin,</p>
+            
+            <p>A new user has registered for the Transmittal System. Please review the details below and approve or reject the registration.</p>
+            
+            <h2 style="color: #667eea;">Registration Details</h2>
+            <table>
+                <tr>
+                    <td>Username:</td>
+                    <td>{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <td>Full Name:</td>
+                    <td>{{ full_name }}</td>
+                </tr>
+                <tr>
+                    <td>Email:</td>
+                    <td>{{ user.email }}</td>
+                </tr>
+                <tr>
+                    <td>Contact:</td>
+                    <td>{{ profile.contact }}</td>
+                </tr>
+                <tr>
+                    <td>Company:</td>
+                    <td>{{ profile.company }}</td>
+                </tr>
+                <tr>
+                    <td>Department:</td>
+                    <td>{{ profile.department.name|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <td>Location:</td>
+                    <td>{{ profile.location }}</td>
+                </tr>
+                <tr>
+                    <td>Address:</td>
+                    <td>{{ profile.address }}</td>
+                </tr>
+                <tr>
+                    <td>Registered:</td>
+                    <td>{{ registration_date }}</td>
+                </tr>
+            </table>
+            
+            <p>
+                <a href="{{ approval_url }}" class="button">View & Manage Registration</a>
+            </p>
+            
+            <div class="footer">
+                <p>This is an automated email. Please do not reply to this message.</p>
+                <p>&copy; 2025 Transmittal System. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

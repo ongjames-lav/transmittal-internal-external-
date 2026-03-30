@@ -1,0 +1,529 @@
+{% extends 'accounts/gmail_base.html' %}
+
+{% block title %}Inbox - Admin Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    .stat-card {
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .stat-icon {
+        font-size: 40px;
+        color: #1a73e8;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: #202124;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: #5f6368;
+        margin-top: 4px;
+    }
+
+    .activity-section {
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .activity-header {
+        background: #f8f9fa;
+        padding: 16px;
+        border-bottom: 1px solid #dadce0;
+        font-weight: 500;
+        color: #202124;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .activity-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .activity-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f3f4;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .badge-login {
+        background: #e6f4ea;
+        color: #137333;
+    }
+
+    .badge-logout {
+        background: #fce8e6;
+        color: #c5221f;
+    }
+
+    .badge-page_view {
+        background: #e8f0fe;
+        color: #1a73e8;
+    }
+
+    .badge-form_submit {
+        background: #fff8e1;
+        color: #ea8600;
+    }
+
+    .badge-download {
+        background: #e0f2f1;
+        color: #00695c;
+    }
+
+    .badge-error {
+        background: #ffe0b2;
+        color: #e65100;
+    }
+</style>
+
+<!-- Statistics Cards -->
+<div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="stat-card">
+        <span class="material-icons stat-icon">person</span>
+        <div>
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <span class="material-icons stat-icon">schedule</span>
+        <div>
+            <div class="stat-value">{{ stats.pending }}</div>
+            <div class="stat-label">Pending Requests</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Active Sessions -->
+{% if active_sessions %}
+<div class="activity-section">
+    <div class="activity-header">
+        <span class="material-icons">public</span>
+        Active User Sessions ({{ active_sessions|length }})
+    </div>
+    <ul class="activity-list">
+        {% for session in active_sessions %}
+        <li class="activity-item">
+            <div style="flex: 1;">
+                <div style="font-weight: 500; color: #202124;">
+                    {{ session.user.get_full_name }} <span style="color: #5f6368; font-weight: normal;">({{
+                        session.user.username }})</span>
+                </div>
+                <div style="color: #5f6368; font-size: 12px; margin-top: 2px;">
+                    📍 {{ session.ip_address }} • ⏱️ {{ session.get_session_duration }}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div
+                    style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 500;">
+                    🟢 Active
+                </div>
+                <div style="color: #5f6368; font-size: 12px; margin-top: 4px;">
+                    {{ session.login_time|date:"M d, H:i" }}
+                </div>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- Recent Activity Logs -->
+{% if recent_activities %}
+<div class="activity-section">
+    <div class="activity-header">
+        <span class="material-icons">history</span>
+        Recent User Activity (Last 20 Actions)
+    </div>
+    <ul class="activity-list">
+        {% for activity in recent_activities %}
+        <li class="activity-item">
+            <div style="flex: 1;">
+                <div style="font-weight: 500; color: #202124;">
+                    {{ activity.user.get_full_name }}
+                    <span class="activity-badge badge-{{ activity.activity_type }}">
+                        {{ activity.get_activity_type_display }}
+                    </span>
+                </div>
+                <div style="color: #5f6368; font-size: 12px; margin-top: 2px;">
+                    {{ activity.page_url|truncatechars:60 }}
+                </div>
+            </div>
+            <div style="text-align: right; color: #5f6368; font-size: 12px;">
+                📍 {{ activity.ip_address }}<br>
+                {{ activity.timestamp|date:"M d, H:i" }}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="inbox-container">
+    <div class="inbox-header"
+        style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+        <h1 style="margin: 0; flex: 0 1 auto;">
+            {% if status_filter == 'pending' %}
+            Pending Registrations
+            {% elif status_filter == 'approved' %}
+            Approved Users
+            {% elif status_filter == 'rejected' %}
+            Rejected Users
+            {% else %}
+            All User Registrations
+            {% endif %}
+        </h1>
+        <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: nowrap;">
+            <form method="get" style="display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; flex: 1;">
+                <select id="department-filter" name="department" class="filter-select" onchange="applyFilters()"
+                    style="padding: 10px 12px; background: white; color: #202124; border: 1px solid #dadce0; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px; flex-shrink: 0;">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept }}" {% if department_filter == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+                <select id="location-filter" name="location" class="filter-select" onchange="applyFilters()"
+                    style="padding: 10px 12px; background: white; color: #202124; border: 1px solid #dadce0; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px; flex-shrink: 0;">
+                    <option value="">All Locations</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc }}" {% if location_filter == loc %}selected{% endif %}>{{ loc }}</option>
+                    {% endfor %}
+                </select>
+                {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+                <input type="text" name="search" placeholder="Search..." value="{{ search_query }}"
+                    style="padding: 10px 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 13px; min-width: 120px; flex: 0 1 auto; max-width: 180px;">
+                <button type="submit"
+                    style="padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px; flex-shrink: 0;">
+                    Search
+                </button>
+                {% if department_filter or location_filter or search_query %}
+                <a href="?{% if status_filter %}status={{ status_filter }}{% endif %}"
+                    style="padding: 8px 10px; color: #1a73e8; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;">
+                    <span class="material-icons" style="font-size: 16px;">close</span>
+                </a>
+                {% endif %}
+            </form>
+
+            <!-- Selection Controls - Right Side -->
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; flex-shrink: 0;">
+                <button type="button" id="select-all-btn" class="btn-select-all"
+                    style="padding: 8px 12px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-icons"
+                        style="vertical-align: middle; font-size: 16px; margin: 0;">done_all</span>
+                    <span style="white-space: nowrap;">Select All</span>
+                </button>
+                <button type="button" id="deselect-all-btn" class="btn-deselect-all"
+                    style="padding: 8px 12px; background: #dadce0; color: #202124; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px; display: none; flex-shrink: 0; align-items: center; gap: 4px;">
+                    <span class="material-icons"
+                        style="vertical-align: middle; font-size: 16px; margin: 0;">clear_all</span>
+                    <span style="white-space: nowrap;">Deselect</span>
+                </button>
+                <form id="batch-approve-form" method="post" action="{% url 'accounts:admin_batch_approve' %}"
+                    style="display: flex; gap: 8px; margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" id="batch-approve-btn" class="btn-batch-approve"
+                        style="padding: 8px 12px; background: #34a853; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px; display: none; flex-shrink: 0; align-items: center; gap: 4px;">
+                        <span class="material-icons"
+                            style="vertical-align: middle; font-size: 16px; margin: 0;">check_circle</span>
+                        <span style="white-space: nowrap;">Approve</span>
+                    </button>
+                    <div id="selected-ids-container"></div>
+                </form>
+                <span id="selection-count"
+                    style="color: #5f6368; font-size: 13px; flex-shrink: 0; white-space: nowrap;">0 selected</span>
+            </div>
+        </div>
+    </div>
+
+    {% if profiles %}
+    <ul class="inbox-list">
+        {% for profile in profiles %}
+        <div class="inbox-row {% if profile.status == 'pending' %}unread{% endif %}" data-profile-id="{{ profile.id }}">
+            <input type="checkbox" class="inbox-checkbox profile-checkbox" value="{{ profile.id }}"
+                onclick="event.stopPropagation(); updateSelectionUI();">
+
+            <a href="{% url 'accounts:admin_view_user' profile.id %}"
+                style="flex: 1; display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit;">
+                <span class="inbox-star {% if profile.is_starred %}starred{% endif %}"
+                    onclick="event.stopPropagation();">
+                    <span class="material-icons">
+                        {% if profile.is_starred %}star{% else %}star_border{% endif %}
+                    </span>
+                </span>
+
+                <div class="inbox-sender">
+                    {{ profile.get_full_name }}
+                </div>
+
+                <div class="inbox-subject">
+                    <strong>{{ profile.user.email }}</strong>
+                    <span class="inbox-snippet">
+                        {% if profile.assigned_location %}{{ profile.assigned_location.name }}{% else %}-{% endif %} •
+                        {{ profile.department.name|default:"N/A" }}
+                    </span>
+                </div>
+
+                <span class="status-badge 
+                            {% if profile.status == 'pending' %}status-pending
+                            {% elif profile.status == 'approved' %}status-approved
+                            {% elif profile.status == 'rejected' %}status-rejected
+                            {% endif %}">
+                    {{ profile.status|title }}
+                </span>
+
+                <div class="inbox-date">
+                    {{ profile.created_at|date:"M d" }}
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div style="text-align: center; padding: 48px; color: var(--gray-700);">
+        <div style="margin-bottom: 16px;"><span class="material-icons"
+                style="font-size: 64px; color: #dadce0;">people_outline</span></div>
+        <div style="font-size: var(--subtitle-size); margin-bottom: 8px;">No users found</div>
+        <div style="font-size: var(--body-size);">
+            {% if search_query %}
+            No results for "{{ search_query }}". Try a different search term.
+            {% elif status_filter %}
+            No {{ status_filter }} users to display.
+            {% else %}
+            No user registrations yet.
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Override for admin-specific styling if needed */
+    .inbox-row.unread {
+        background: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .inbox-row {
+        display: flex;
+        align-items: center;
+        padding-right: 16px;
+        /* Ensure space on right */
+    }
+
+    /* Prevent overflow on smaller screens */
+    .inbox-sender {
+        width: 140px;
+        flex-shrink: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 13px;
+    }
+
+    .inbox-subject {
+        flex: 1;
+        min-width: 120px;
+        /* Critical for flex truncation */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 16px;
+        font-size: 13px;
+    }
+
+    .inbox-snippet {
+        display: none;
+    }
+
+    .status-badge {
+        flex-shrink: 0;
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 3px;
+    }
+
+    .inbox-date {
+        flex-shrink: 0;
+        font-size: 12px;
+        color: #5f6368;
+        margin-left: 8px;
+    }
+
+    .inbox-checkbox {
+        flex-shrink: 0;
+        margin-right: 8px;
+    }
+
+    /* Ensure header controls wrap nicely */
+    .inbox-header {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1400px) {
+        .inbox-sender {
+            width: 120px;
+        }
+
+        .inbox-subject {
+            min-width: 100px;
+        }
+    }
+
+    @media (max-width: 1200px) {
+        .inbox-sender {
+            width: 100px;
+            font-size: 12px;
+        }
+    }
+</style>
+
+<script>
+    function applyFilters() {
+        const department = document.getElementById('department-filter').value;
+        const location = document.getElementById('location-filter').value;
+        const currentUrl = new URL(window.location.href);
+
+        if (department) {
+            currentUrl.searchParams.set('department', department);
+        } else {
+            currentUrl.searchParams.delete('department');
+        }
+
+        if (location) {
+            currentUrl.searchParams.set('location', location);
+        } else {
+            currentUrl.searchParams.delete('location');
+        }
+
+        // Preserve status parameter if it exists
+        const status = '{{ status_filter|default:"" }}';
+        if (status && status !== 'None') {
+            currentUrl.searchParams.set('status', status);
+        }
+
+        window.location.href = currentUrl.toString();
+    }
+
+    function updateSelectionUI() {
+        const checkboxes = document.querySelectorAll('.profile-checkbox:checked');
+        const count = checkboxes.length;
+        const selectAllBtn = document.getElementById('select-all-btn');
+        const deselectAllBtn = document.getElementById('deselect-all-btn');
+        const batchApproveBtn = document.getElementById('batch-approve-btn');
+        const selectionCount = document.getElementById('selection-count');
+
+        if (count > 0) {
+            if (selectAllBtn) selectAllBtn.style.display = 'none';
+            if (deselectAllBtn) deselectAllBtn.style.display = 'inline-flex';
+            if (batchApproveBtn) batchApproveBtn.style.display = 'inline-flex';
+            if (selectionCount) selectionCount.textContent = `${count} user${count !== 1 ? 's' : ''} selected`;
+        } else {
+            if (selectAllBtn) selectAllBtn.style.display = 'inline-flex';
+            if (deselectAllBtn) deselectAllBtn.style.display = 'none';
+            if (batchApproveBtn) batchApproveBtn.style.display = 'none';
+            if (selectionCount) selectionCount.textContent = '0 selected';
+        }
+    }
+
+    // Select All button functionality
+    const selectAllBtn = document.getElementById('select-all-btn');
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function () {
+            document.querySelectorAll('.profile-checkbox').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateSelectionUI();
+        });
+    }
+
+    // Deselect All button functionality
+    const deselectAllBtn = document.getElementById('deselect-all-btn');
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', function () {
+            document.querySelectorAll('.profile-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectionUI();
+        });
+    }
+
+    // Confirm before approving
+    const batchApproveBtn = document.getElementById('batch-approve-btn');
+    if (batchApproveBtn) {
+        batchApproveBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const checkedBoxes = document.querySelectorAll('.profile-checkbox:checked');
+            const count = checkedBoxes.length;
+
+            if (count === 0) {
+                alert('Please select at least one user to approve.');
+                return false;
+            }
+
+            if (confirm(`Are you sure you want to approve ${count} user${count !== 1 ? 's' : ''}?\n\nThis action cannot be undone.`)) {
+                // Add hidden inputs with selected profile IDs
+                const container = document.getElementById('selected-ids-container');
+                container.innerHTML = '';
+                checkedBoxes.forEach(checkbox => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'profile_ids';
+                    input.value = checkbox.value;
+                    container.appendChild(input);
+                });
+
+                // Submit the form
+                setTimeout(function () {
+                    document.getElementById('batch-approve-form').submit();
+                }, 100);
+            }
+            return false;
+        });
+    }
+
+    // Initialize
+    updateSelectionUI();
+</script>
+{% endblock %}
